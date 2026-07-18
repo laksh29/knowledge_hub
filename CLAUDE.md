@@ -48,6 +48,15 @@ This is a Flutter app. `flutter-clean-architecture-guide.md` at the repo root is
 - Keep steering current and verify alignment with `/kiro:spec-status`
 - Follow the user's instructions precisely, and within that scope act autonomously: gather the necessary context and complete the requested work end-to-end in this run, asking questions only when essential information is missing or the instructions are critically ambiguous.
 
+## Git Commits
+- **Never commit without explicit approval.** Do not run `git commit` on your own initiative — always get explicit go-ahead first, every time, even mid-task after a change looks finished.
+- **Never add co-authors.** No `Co-Authored-By:` trailer of any kind.
+- **Always make atomic commits.** One focused, self-contained logical change per commit — split unrelated changes into separate commits.
+- **Follow Conventional Commits**: `<type>[optional scope]: <description>`, optional body/footer.
+  - Common types: `fix`, `feat`, `build`, `chore`, `ci`, `docs`, `style`, `refactor`, `perf`, `test`.
+  - Breaking changes: `!` after type/scope (e.g. `feat!:`) and/or a `BREAKING CHANGE:` footer.
+  - Default to a one-liner description; add a body/footer only when there's non-obvious context worth recording.
+
 ## Steering Configuration
 - Load entire `.kiro/steering/` as project memory
 - Default files: `product.md`, `tech.md`, `structure.md`
