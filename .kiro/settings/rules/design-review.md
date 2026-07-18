@@ -42,6 +42,11 @@ Conduct interactive quality review of technical design documents to ensure they 
 - Clear API boundaries and data structures
 - Input validation and error handling coverage
 
+### 5. UI Design System Alignment (when the design includes presentation-layer components)
+- Every screen/page/widget component cites the `design.md` (repo root) tokens/components it uses — colors, typography, spacing, radius, elevation
+- No invented hex colors, raw px values, or ad hoc font sizes/weights where a `design.md` token already covers the case
+- Gaps not covered by `design.md` (see its "Known Gaps" section) are flagged as an explicit open decision, not silently guessed
+
 ## Review Process
 
 ### Step 1: Analyze

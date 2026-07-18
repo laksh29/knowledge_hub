@@ -8,6 +8,11 @@ Kiro-style Spec-Driven Development on an agentic SDLC
 - Steering: `.kiro/steering/`
 - Specs: `.kiro/specs/`
 - Coding standard: `flutter-clean-architecture-guide.md` (repo root)
+- UI design system: `design.md` (repo root)
+
+### UI Design System
+
+`design.md` at the repo root is the binding visual design system — colors, typography, spacing, radius, elevation, and component specs. Any spec, task, or implementation touching a screen, page, or widget must read it directly (see `.kiro/steering/design-system.md` for the condensed index) and derive visual values from its tokens/components — never an invented hex color, raw px value, or ad hoc font size/weight. Gaps `design.md` doesn't cover must be flagged as an open decision, not guessed.
 
 ### Coding Standard
 

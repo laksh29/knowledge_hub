@@ -28,6 +28,7 @@ Generate implementation tasks for feature **$1** based on approved requirements 
 - `.kiro/specs/$1/tasks.md` (if exists, for merge mode)
 - **Entire `.kiro/steering/` directory** for complete project memory
 - `flutter-clean-architecture-guide.md` (repo root) — the project's binding Flutter Clean Architecture & TDD standard; use it to keep task boundaries aligned with domain/data/presentation layering and TDD expectations (tests-first for `domain`/`data`/Bloc-Cubit, `mocktail`/`bloc_test`)
+- `design.md` (repo root, the UI design system — distinct from `.kiro/specs/$1/design.md`) — read it whenever the spec's Components & Interfaces includes screens/pages/widgets, so UI task details can name the specific tokens/components to use
 
 **Validate approvals**:
 - If `-y` flag provided ($2 == "-y"): Auto-approve requirements and design in spec.json

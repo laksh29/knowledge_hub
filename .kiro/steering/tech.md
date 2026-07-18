@@ -6,6 +6,8 @@ Clean Architecture at the macro level (`domain` / `data` / `presentation`, depen
 
 **Full standard**: `flutter-clean-architecture-guide.md` — every rule in that document is mandatory unless explicitly marked "guideline." This steering file summarizes it for quick reference; the guide itself is authoritative and must be read directly for code-level patterns, worked examples, and the PR review checklist (§9).
 
+**UI/visual standard**: `design.md` (repo root) is the binding design system (colors, typography, spacing, radius, elevation, components) for any `presentation`-layer work. See `.kiro/steering/design-system.md` for the condensed index — read `design.md` directly before designing, task-planning, or implementing any screen/page/widget.
+
 ## Core Technologies
 
 - **Language**: Dart 3 (`sdk: ^3.10.4`)

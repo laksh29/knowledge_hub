@@ -27,6 +27,7 @@ Generate technical design document for feature **$1** based on approved requirem
 - `.kiro/specs/$1/spec.json`, `requirements.md`, `design.md` (if exists)
 - **Entire `.kiro/steering/` directory** for complete project memory
 - `flutter-clean-architecture-guide.md` (repo root) — the project's binding Flutter Clean Architecture & TDD standard. Read it directly; `.kiro/steering/tech.md`/`structure.md` only summarize it and intentionally omit code-level examples and the PR review checklist (§9)
+- `design.md` (repo root) — the project's binding UI design system (colors, typography, spacing, radius, elevation, components). Read it directly whenever this feature includes any screen/page/widget; `.kiro/steering/design-system.md` only condenses it
 - `.kiro/settings/templates/specs/design.md` for document structure
 - `.kiro/settings/rules/design-principles.md` for design principles
 - `.kiro/settings/templates/specs/research.md` for discovery log structure
@@ -107,6 +108,10 @@ Generate technical design document for feature **$1** based on approved requirem
    - Every variable declaration, function/method parameter, and return type must be explicit and concrete — no inferred return types, no `var` for non-obvious locals.
    - Every class, variable, field, parameter, and function name must be verbose and contextual — describe precisely what it holds or does (see `.kiro/steering/tech.md` Naming).
    - Document public interfaces and contracts (Repository, DataSource, UseCase, Service) clearly to ensure cross-component type safety.
+ - **UI/Visual Design** (whenever the feature includes a screen, page, or widget):
+   - Derive every color, typography, spacing, radius, and elevation value from `design.md` (repo root) tokens/components — never invent a hex value, raw px number, or ad hoc font size/weight.
+   - Cite the specific `design.md` token(s)/component name(s) each UI component uses in its Components & Interfaces entry.
+   - If a needed visual pattern isn't covered by `design.md` (see its "Known Gaps" section), flag it explicitly as an open decision rather than guessing a plausible value.
 - **Latest Information**: Use WebSearch/WebFetch for external dependencies and best practices
 - **Steering Alignment**: Respect existing architecture patterns from steering context
 - **Template Adherence**: Follow specs/design.md template structure and generation instructions strictly
@@ -158,6 +163,10 @@ Provide brief summary in the language specified in spec.json:
 **Steering Context Missing**:
 - **Warning**: "Steering directory empty or missing - design may not align with project standards"
 - **Proceed**: Continue with generation but note limitation in output
+
+**`design.md` Missing** (feature includes UI):
+- **Warning**: "No `design.md` found at repo root - UI components may not align with an established design system"
+- **Proceed**: Continue with generation but flag every UI component's visual values as provisional pending a design system reference
 
 **Discovery Complexity Unclear**:
 - **Default**: Use full discovery process (`.kiro/settings/rules/design-discovery-full.md`)

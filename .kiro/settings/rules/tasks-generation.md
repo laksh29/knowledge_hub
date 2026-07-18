@@ -42,6 +42,7 @@ Focus on capabilities and outcomes, not code structure.
 - Respect architecture boundaries defined in design.md (Architecture Pattern & Boundary Map)
 - Honor interface contracts documented in design.md
 - Implicitly comply with steering's type-safety and naming standards (e.g. no `dynamic`/`Map<String, dynamic>`, explicit types/returns, verbose naming) — do not restate these per task; they apply uniformly and are validated at implementation/review time
+- For any task that builds or modifies a screen/page/widget, reference the specific `design.md` (repo root) token(s)/component name(s) it should use in the detail bullets (e.g. "use `{component.button-primary}` and `{colors.primary}`") instead of leaving visual decisions unspecified
 - Use major task summaries sparingly—omit detail bullets if the work is fully captured by child tasks.
 
 **End with integration tasks** to wire everything together.

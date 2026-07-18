@@ -30,6 +30,7 @@ Interactive design quality review for feature **$1** based on approved requireme
      - All custom steering files (regardless of mode settings)
      - This provides complete project memory and context
    - Read `flutter-clean-architecture-guide.md` (repo root) — the project's binding Flutter Clean Architecture & TDD standard; steering summarizes it but omits code-level examples and the §9 PR review checklist
+   - If the design includes any screen/page/widget, read `design.md` (repo root, the UI design system) — verify cited components use its tokens rather than invented values
 
 2. **Read Review Guidelines**:
    - Read `.kiro/settings/rules/design-review.md` for review criteria and process

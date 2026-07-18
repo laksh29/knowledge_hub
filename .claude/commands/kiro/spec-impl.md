@@ -27,6 +27,7 @@ Execute implementation tasks for feature **$1** using Test-Driven Development.
 - `.kiro/specs/$1/spec.json`, `requirements.md`, `design.md`, `tasks.md`
 - **Entire `.kiro/steering/` directory** for complete project memory
 - `flutter-clean-architecture-guide.md` (repo root) — the project's binding Flutter Clean Architecture & TDD standard. Every rule in it is mandatory unless marked "guideline." Its §9 PR Review Checklist is the implementation-time acceptance bar
+- `design.md` (repo root, the UI design system) — read it before implementing any screen/page/widget task; every color/typography/spacing/radius/elevation value must come from its tokens/components via the project's typed design-token classes, never a hardcoded literal
 
 **Validate approvals**:
 - Verify tasks are approved in spec.json (stop if not, see Safety & Fallback)
@@ -75,6 +76,7 @@ For each selected task, follow Kent Beck's TDD cycle:
 - **Naming**: Every class, variable, field, parameter, and function name is verbose and contextual — describes precisely what it holds or does
 - **Mocking**: `mocktail` only — never `mockito`, never positional `when(x.method())`
 - **Architecture Boundaries**: Respect `domain`/`data`/`presentation` dependency direction; Bloc/Cubit's only public surface is `state`; DataSource is the only layer allowed to `throw`
+- **UI/Visual Design**: Any widget/screen/page pulls colors, typography, spacing, radius, and elevation from `design.md` (repo root) tokens/components via typed constants — never an inline hex value, raw px number, or ad hoc font size/weight; flag anything not covered by `design.md`
 </instructions>
 
 ## Tool Guidance

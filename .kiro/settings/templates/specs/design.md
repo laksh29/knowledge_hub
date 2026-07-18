@@ -179,6 +179,7 @@ Group detailed blocks by domain or architectural layer. For each detailed compon
 - Primary responsibility
 - Domain boundary and transaction scope
 - Data ownership / invariants
+- **UI components only**: cite the `design.md` (repo root) tokens/components used (colors, typography, spacing, radius, elevation) — no invented visual values; flag anything not covered by `design.md`'s documented gaps
 
 **Dependencies**
 - Inbound: Component/service name — purpose (Criticality)

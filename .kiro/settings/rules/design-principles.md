@@ -63,7 +63,13 @@
 - **Idempotency**: Design for retry safety
 - **Contract Visibility**: Surface API and event contracts in design.md while linking extended details from `research.md`
 
-### 8. Dependency Direction
+### 8. UI Visual Design Alignment
+- Any component that renders UI (screen, page, widget) MUST derive its colors, typography, spacing, radius, and elevation from `design.md` (repo root) tokens/components — never an invented hex value, raw px number, or ad hoc font size/weight
+- Cite the specific `design.md` token(s)/component name(s) a UI component uses directly in its Components & Interfaces entry
+- If a needed visual pattern is not covered by `design.md` (see its "Known Gaps" section), flag it explicitly as an open design decision instead of guessing a plausible-looking value
+- See `.kiro/steering/design-system.md` for the condensed token index
+
+### 9. Dependency Direction
 - **Define and enforce the dependency direction** in the architecture section of design.md (e.g., Types → Config → Repository → Service → Runtime → UI)
 - Each layer imports only from layers to its left — never upward
 - This constraint is not a suggestion; implementation and review should treat violations as errors

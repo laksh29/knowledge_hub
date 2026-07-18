@@ -49,6 +49,7 @@ For each detected feature:
   - Default files: `structure.md`, `tech.md`, `product.md`
   - All custom steering files (regardless of mode settings)
 - Read `flutter-clean-architecture-guide.md` (repo root) — the project's binding Flutter Clean Architecture & TDD standard and the source for its §9 PR Review Checklist, used below
+- If implementation touches any screen/page/widget, read `design.md` (repo root, the UI design system) — used for the UI alignment check below
 
 ### 3. Execute Validation
 
@@ -85,6 +86,10 @@ For each task, verify:
 - Spot-check that public functions/methods and non-trivial variables declare explicit types/return types — flag inferred/implicit typing on non-obvious cases as "Type safety violation"
 - Spot-check naming: flag generic/ambiguous identifiers (`data`, `temp`, `handler`, `x`) as "Naming violation"
 - Grep test files for `mockito` or positional `when(x.method(...))` — flag as "Mocking violation" (per `flutter-clean-architecture-guide.md` §8.2/§9)
+
+#### UI Design System Alignment Check (when the task touched a screen/page/widget)
+- Grep widget/screen files for raw hex colors (e.g. `Color(0xFF...)`), literal `TextStyle(fontSize: ...)` values, and magic-number `EdgeInsets`/`BorderRadius` — flag any not sourced from a typed design-token class as "Design system violation"
+- Cross-check the values used against `design.md` (repo root) tokens/components; if a value doesn't map to a documented token, flag as "Design system violation" unless it's explicitly listed under `design.md`'s "Known Gaps"
 
 ### 4. Generate Report
 
