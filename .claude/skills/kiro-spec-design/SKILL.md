@@ -16,6 +16,7 @@ metadata:
   - Appropriate architecture discovery and research completed
   - Design aligns with steering context and existing patterns
   - Visual diagrams included for complex architectures
+  - UI components cite `design.md` (repo root) tokens/components rather than inventing visual values
 
 ## Execution Steps
 
@@ -26,6 +27,8 @@ Otherwise, load all necessary context:
 - `.kiro/specs/{feature}/spec.json`, `requirements.md`, `design.md` (if exists)
 - `.kiro/specs/{feature}/research.md` (if exists, contains gap analysis from `/kiro-validate-gap`)
 - Core steering context: `product.md`, `tech.md`, `structure.md`
+- `flutter-clean-architecture-guide.md` (repo root) — the project's binding Flutter Clean Architecture & TDD standard. Read it directly; `tech.md`/`structure.md` only summarize it and intentionally omit code-level examples and the PR review checklist (§9)
+- `design.md` (repo root) — the project's binding UI design system (colors, typography, spacing, radius, elevation, components). Read it directly whenever this feature includes any screen/page/widget; `.kiro/steering/design-system.md` only condenses it
 - Additional steering files only when directly relevant to requirement coverage, architecture boundaries, integrations, runtime prerequisites, security/performance constraints, or team conventions that affect implementation readiness
 - `.kiro/settings/templates/specs/design.md` for document structure
 - Read `rules/design-principles.md` from this skill's directory for design principles
@@ -134,12 +137,17 @@ After all findings return, synthesize in main context before proceeding.
    - Update `updated_at` timestamp
 
 ## Critical Constraints
- - **Type Safety**:
-   - Enforce strong typing aligned with the project's technology stack.
-   - For statically typed languages, define explicit types/interfaces and avoid unsafe casts.
-   - For TypeScript, never use `any`; prefer precise types and generics.
-   - For dynamically typed languages, provide type hints/annotations where available (e.g., Python type hints) and validate inputs at boundaries.
-   - Document public interfaces and contracts clearly to ensure cross-component type safety.
+ - **Type Safety** (Dart/Flutter, per `flutter-clean-architecture-guide.md` and `.kiro/steering/tech.md`):
+   - Never use `dynamic` — not as a variable, parameter, or return type.
+   - Never use `Object?` as a substitute for a proper type — every value has a concrete type.
+   - Never use `Map<String, dynamic>` to pass structured data between functions or layers — define a typed Model/Entity/ViewModel class. The only exception is `fromJson`/`toJson` serialization or an explicitly documented schema-free server blob, confined to the Model boundary.
+   - Every variable declaration, function/method parameter, and return type must be explicit and concrete — no inferred return types, no `var` for non-obvious locals.
+   - Every class, variable, field, parameter, and function name must be verbose and contextual — describe precisely what it holds or does (see `.kiro/steering/tech.md` Naming).
+   - Document public interfaces and contracts (Repository, DataSource, UseCase, Service) clearly to ensure cross-component type safety.
+ - **UI/Visual Design** (whenever the feature includes a screen, page, or widget):
+   - Derive every color, typography, spacing, radius, and elevation value from `design.md` (repo root) tokens/components — never invent a hex value, raw px number, or ad hoc font size/weight.
+   - Cite the specific `design.md` token(s)/component name(s) each UI component uses in its Components & Interfaces entry.
+   - If a needed visual pattern isn't covered by `design.md` (see its "Known Gaps" section), flag it explicitly as an open decision rather than guessing a plausible value.
 - **Requirements Traceability IDs**: Use numeric requirement IDs only (e.g. "1.1", "1.2", "3.1", "3.3") exactly as defined in requirements.md. Do not invent new IDs or use alphabetic labels.
 
 ## Output Description
@@ -181,6 +189,10 @@ Provide brief summary in the language specified in spec.json:
 **Steering Context Missing**:
 - **Warning**: "Steering directory empty or missing - design may not align with project standards"
 - **Proceed**: Continue with generation but note limitation in output
+
+**`design.md` Missing** (feature includes UI):
+- **Warning**: "No `design.md` found at repo root - UI components may not align with an established design system"
+- **Proceed**: Continue with generation but flag every UI component's visual values as provisional pending a design system reference
 
 **Invalid Requirement IDs**:
   - **Stop Execution**: If requirements.md is missing numeric IDs or uses non-numeric headings (for example, "Requirement A"), stop and instruct the user to fix requirements.md before continuing.

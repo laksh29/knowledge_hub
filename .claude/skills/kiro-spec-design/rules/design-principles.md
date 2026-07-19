@@ -10,10 +10,17 @@
 - Do not leak downstream-specific behavior or assumptions into upstream boundaries
 
 ### 1. Type Safety is Mandatory
-- **NEVER** use `any` type in TypeScript interfaces
-- Define explicit types for all parameters and returns
-- Use discriminated unions for error handling
+- **NEVER** use `dynamic` — not as a variable, parameter, or return type
+- **NEVER** use `Object?` as a substitute for a proper type — every value has a concrete type
+- **NEVER** use `Map<String, dynamic>` to pass structured data between functions or layers — define a typed Model/Entity/ViewModel class instead. The only exception is inside `fromJson`/`toJson` serialization or an explicitly documented schema-free server blob, confined to the Model boundary
+- Define explicit, concrete types for every variable declaration, function/method parameter, and return type — no inferred return types, no `var` for non-obvious locals
+- Use sealed classes / `Result<Failure, S>` for error handling (never boolean flags or nullable-error conventions)
 - Specify generic constraints clearly
+
+### 1.5 Verbose, Contextual Naming is Mandatory
+- Every class, variable, field, parameter, and function name must precisely describe what it holds or does — prefer `selectedProductAvailabilityLabel` over `label`, `fetchFeaturedProductsAndCacheLocally` over `fetch`
+- Do not sacrifice clarity for brevity; a longer, unambiguous name beats a short, generic one
+- Apply uniformly across domain, data, and presentation layers — service interfaces, ViewModel getters, and Bloc event/state names included
 
 ### 2. Design vs Implementation
 - **Focus on WHAT, not HOW**
@@ -56,7 +63,13 @@
 - **Idempotency**: Design for retry safety
 - **Contract Visibility**: Surface API and event contracts in design.md while linking extended details from `research.md`
 
-### 8. Dependency Direction
+### 8. UI Visual Design Alignment
+- Any component that renders UI (screen, page, widget) MUST derive its colors, typography, spacing, radius, and elevation from `design.md` (repo root) tokens/components — never an invented hex value, raw px number, or ad hoc font size/weight
+- Cite the specific `design.md` token(s)/component name(s) a UI component uses directly in its Components & Interfaces entry
+- If a needed visual pattern is not covered by `design.md` (see its "Known Gaps" section), flag it explicitly as an open design decision instead of guessing a plausible-looking value
+- See `.kiro/steering/design-system.md` for the condensed token index
+
+### 9. Dependency Direction
 - **Define and enforce the dependency direction** in the architecture section of design.md (e.g., Types → Config → Repository → Service → Runtime → UI)
 - Each layer imports only from layers to its left — never upward
 - This constraint is not a suggestion; implementation and review should treat violations as errors
@@ -126,9 +139,9 @@
 - Prefer lists or inline descriptors for short data (dependencies, contract selections). Use tables only when comparing multiple items.
 
 ### Shared Interfaces & Props
-- Define a base interface (e.g., `BaseUIPanelProps`) for recurring UI components and extend it per component to capture only the deltas.
-- Hooks, utilities, and integration adapters that introduce new contracts should still include full TypeScript signatures.
-- When reusing a base contract, reference it explicitly (e.g., “Extends `BaseUIPanelProps` with `onSubmitAnswer` callback”) instead of duplicating the code block.
+- Define a base abstract class or ViewModel (e.g., `BaseListItemViewModel`) for recurring widgets and extend it per component to capture only the deltas.
+- Use cases, repositories, and data sources that introduce new contracts should still include full Dart signatures with explicit types and return types (no `dynamic`, no `Map<String, dynamic>`).
+- When reusing a base contract, reference it explicitly (e.g., "Extends `BaseListItemViewModel` with an `onSubmitAnswer` callback") instead of duplicating the code block.
 
 ### Data Models
 - Domain Model covers aggregates, entities, value objects, domain events, and invariants. Add Mermaid diagrams only when relationships are non-trivial.
