@@ -30,6 +30,8 @@ Otherwise, load all necessary context:
 - Read `.kiro/specs/{feature}/requirements.md` for requirements
 - Read `.kiro/specs/{feature}/design.md` for design document
 - Core steering context: `product.md`, `tech.md`, `structure.md`
+- `flutter-clean-architecture-guide.md` (repo root) — the project's binding Flutter Clean Architecture & TDD standard; steering summarizes it but omits code-level examples and the §9 PR review checklist
+- If the design includes any screen/page/widget, read `design.md` (repo root, the UI design system) — verify cited components use its tokens rather than invented values
 - Additional steering files only when directly relevant to architecture boundaries, integrations, runtime prerequisites, domain rules, security/performance constraints, or team conventions that affect implementation readiness
 - Relevant local agent skills or playbooks only when they clearly match the feature's host environment or use case and provide review-relevant context
 

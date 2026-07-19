@@ -36,10 +36,16 @@ Conduct interactive quality review of technical design documents to ensure they 
 - Appropriate complexity for requirements
 
 ### 4. Type Safety & Interface Design
-- Proper type definitions and interface contracts
-- Avoidance of unsafe patterns (e.g., `any` in TypeScript)
+- Proper type definitions and interface contracts — every variable, parameter, and return type is explicit and concrete
+- Avoidance of unsafe patterns: no `dynamic`, no `Object?` as a stand-in type, no `Map<String, dynamic>` passed between layers (only acceptable inside `fromJson`/`toJson` at the Model boundary)
+- Verbose, contextual naming on every class, variable, field, parameter, and function — flag generic/ambiguous names (`data`, `handler`, `temp`)
 - Clear API boundaries and data structures
 - Input validation and error handling coverage
+
+### 5. UI Design System Alignment (when the design includes presentation-layer components)
+- Every screen/page/widget component cites the `design.md` (repo root) tokens/components it uses — colors, typography, spacing, radius, elevation
+- No invented hex colors, raw px values, or ad hoc font sizes/weights where a `design.md` token already covers the case
+- Gaps not covered by `design.md` (see its "Known Gaps" section) are flagged as an explicit open decision, not silently guessed
 
 ## Review Process
 
