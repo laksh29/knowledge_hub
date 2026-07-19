@@ -21,7 +21,7 @@ This project deliberately splits work into topics the user is learning by buildi
 
 ## Task Generation Rule
 
-Before finalizing any `/kiro:spec-tasks` output, cross-check every task against this file. Any task whose primary work falls under a USER-IMPLEMENT topic must be marked `[USER-IMPLEMENT]` in `tasks.md`.
+Before finalizing any `/kiro-spec-tasks` output, cross-check every task against this file. Any task whose primary work falls under a USER-IMPLEMENT topic must be marked `[USER-IMPLEMENT]` in `tasks.md`.
 
 For a `[USER-IMPLEMENT]` task, generate only:
 - The interface/function signature

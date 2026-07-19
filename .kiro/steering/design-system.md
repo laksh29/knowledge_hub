@@ -18,9 +18,9 @@
 
 ## How This Applies Per Phase
 
-- **Design (`/kiro:spec-design`)**: any component in Components & Interfaces that renders UI must cite the `design.md` tokens/components it uses (or explicitly note a documented gap from `design.md`'s "Known Gaps" section and how it's resolved).
-- **Tasks (`/kiro:spec-tasks`)**: UI-related tasks reference the specific `design.md` component/token names in their detail bullets so implementers don't reinvent values.
-- **Implementation (`/kiro:spec-impl`)**: widgets pull colors/typography/spacing/radius/elevation from the project's typed design-token classes (derived from `design.md`), never inline literals; new visual patterns not covered by `design.md` must be flagged, not silently invented.
+- **Design (`/kiro-spec-design`)**: any component in Components & Interfaces that renders UI must cite the `design.md` tokens/components it uses (or explicitly note a documented gap from `design.md`'s "Known Gaps" section and how it's resolved).
+- **Tasks (`/kiro-spec-tasks`)**: UI-related tasks reference the specific `design.md` component/token names in their detail bullets so implementers don't reinvent values.
+- **Implementation (`/kiro-impl`)**: widgets pull colors/typography/spacing/radius/elevation from the project's typed design-token classes (derived from `design.md`), never inline literals; new visual patterns not covered by `design.md` must be flagged, not silently invented.
 
 ## Known Gaps (from `design.md`)
 

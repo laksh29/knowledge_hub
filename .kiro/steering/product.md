@@ -4,7 +4,7 @@
 
 ## Core Capabilities
 
-_To be filled in as features are specced via `/kiro:spec-init`._
+_To be filled in as features are specced via `/kiro-spec-init`._
 
 ## Target Use Cases
 
