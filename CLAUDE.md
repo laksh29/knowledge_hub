@@ -9,6 +9,13 @@ Kiro-style Spec-Driven Development on an agentic SDLC
 - Specs: `.kiro/specs/`
 - Coding standard: `flutter-clean-architecture-guide.md` (repo root)
 - UI design system: `design.md` (repo root)
+- Learning graph: `.kiro/steering/learning-graph.md`
+
+### Learning Graph
+
+`.kiro/steering/learning-graph.md` splits work into USER-IMPLEMENT topics (architecture/design tradeoffs, Flutter animations, native integrations, on-device AI, MCP server implementation) and AI-GENERATE topics (everything else). Before finalizing any `/kiro:spec-tasks` output, cross-check every task against this file. Any task whose primary work falls under a USER-IMPLEMENT topic must be marked `[USER-IMPLEMENT]` in `tasks.md`. For those tasks, generate only: the interface/function signature, a short design note on the approach, and a failing test — not a working implementation. Do not silently write the real logic.
+
+Whenever a task in any spec touches a USER-IMPLEMENT topic, stop and tell the user explicitly: what the task is, why it matches the learning graph, and what stub/test has been prepared for them to build against.
 
 ### UI Design System
 
