@@ -13,7 +13,7 @@ Kiro-style Spec-Driven Development on an agentic SDLC
 
 ### Learning Graph
 
-`.kiro/steering/learning-graph.md` splits work into USER-IMPLEMENT topics (architecture/design tradeoffs, Flutter animations, native integrations, on-device AI, MCP server implementation) and AI-GENERATE topics (everything else). Before finalizing any `/kiro:spec-tasks` output, cross-check every task against this file. Any task whose primary work falls under a USER-IMPLEMENT topic must be marked `[USER-IMPLEMENT]` in `tasks.md`. For those tasks, generate only: the interface/function signature, a short design note on the approach, and a failing test — not a working implementation. Do not silently write the real logic.
+`.kiro/steering/learning-graph.md` splits work into USER-IMPLEMENT topics (architecture/design tradeoffs, Flutter animations, native integrations, on-device AI, MCP server implementation) and AI-GENERATE topics (everything else). Before finalizing any `/kiro-spec-tasks` output, cross-check every task against this file. Any task whose primary work falls under a USER-IMPLEMENT topic must be marked `[USER-IMPLEMENT]` in `tasks.md`. For those tasks, generate only: the interface/function signature, a short design note on the approach, and a failing test — not a working implementation. Do not silently write the real logic.
 
 Whenever a task in any spec touches a USER-IMPLEMENT topic, stop and tell the user explicitly: what the task is, why it matches the learning graph, and what stub/test has been prepared for them to build against.
 
@@ -36,29 +36,50 @@ This is a Flutter app. `flutter-clean-architecture-guide.md` at the repo root is
 
 ### Active Specifications
 - Check `.kiro/specs/` for active specifications
-- Use `/kiro:spec-status [feature-name]` to check progress
+- Use `/kiro-spec-status [feature-name]` to check progress
 
 ## Development Guidelines
 - Think in English, generate responses in English. All Markdown content written to project files (e.g., requirements.md, design.md, tasks.md, research.md, validation reports) MUST be written in the target language configured for this specification (see spec.json.language).
 
 ## Minimal Workflow
-- Phase 0 (optional): `/kiro:steering`, `/kiro:steering-custom`
+- Phase 0 (optional): `/kiro-steering`, `/kiro-steering-custom`
+- Discovery: `/kiro-discovery "idea"` — determines action path, writes brief.md + roadmap.md for multi-spec projects
 - Phase 1 (Specification):
-  - `/kiro:spec-init "description"`
-  - `/kiro:spec-requirements {feature}`
-  - `/kiro:validate-gap {feature}` (optional: for existing codebase)
-  - `/kiro:spec-design {feature} [-y]`
-  - `/kiro:validate-design {feature}` (optional: design review)
-  - `/kiro:spec-tasks {feature} [-y]`
-- Phase 2 (Implementation): `/kiro:spec-impl {feature} [tasks]`
-  - `/kiro:validate-impl {feature}` (optional: after implementation)
-- Progress check: `/kiro:spec-status {feature}` (use anytime)
+  - Single spec: `/kiro-spec-quick {feature} [--auto]` or step by step:
+    - `/kiro-spec-init "description"`
+    - `/kiro-spec-requirements {feature}`
+    - `/kiro-validate-gap {feature}` (optional: for existing codebase)
+    - `/kiro-spec-design {feature} [-y]`
+    - `/kiro-validate-design {feature}` (optional: design review)
+    - `/kiro-spec-tasks {feature} [-y]`
+  - Multi-spec: `/kiro-spec-batch` — creates all specs from roadmap.md in parallel by dependency wave
+- Phase 2 (Implementation): `/kiro-impl {feature} [tasks]`
+  - Without task numbers: autonomous mode (subagent per task + independent review + final validation)
+  - With task numbers: manual mode (selected tasks in main context, still reviewer-gated before completion)
+  - `/kiro-validate-impl {feature}` (standalone re-validation)
+- Progress check: `/kiro-spec-status {feature}` (use anytime)
+
+## Skills Structure
+Skills are located in `.claude/skills/kiro-*/SKILL.md`
+- Each skill is a directory with a `SKILL.md` file
+- Skills run inline with access to conversation context
+- Skills may delegate parallel research to subagents for efficiency
+- Additional files (templates, examples) can be added to skill directories
+- `kiro-review` — task-local adversarial review protocol used by reviewer subagents
+- `kiro-debug` — root-cause-first debug protocol used by debugger subagents
+- `kiro-verify-completion` — fresh-evidence gate before success or completion claims
+- **If there is even a 1% chance a skill applies to the current task, invoke it.** Do not skip skills because the task seems simple.
 
 ## Development Rules
 - 3-phase approval workflow: Requirements → Design → Tasks → Implementation
 - Human review required each phase; use `-y` only for intentional fast-track
-- Keep steering current and verify alignment with `/kiro:spec-status`
+- Keep steering current and verify alignment with `/kiro-spec-status`
 - Follow the user's instructions precisely, and within that scope act autonomously: gather the necessary context and complete the requested work end-to-end in this run, asking questions only when essential information is missing or the instructions are critically ambiguous.
+
+## Steering Configuration
+- Load entire `.kiro/steering/` as project memory
+- Default files: `product.md`, `tech.md`, `structure.md`
+- Custom files are supported (managed via `/kiro-steering-custom`)
 
 ## Git Commits
 - **Never commit without explicit approval.** Do not run `git commit` on your own initiative — always get explicit go-ahead first, every time, even mid-task after a change looks finished.
@@ -68,8 +89,3 @@ This is a Flutter app. `flutter-clean-architecture-guide.md` at the repo root is
   - Common types: `fix`, `feat`, `build`, `chore`, `ci`, `docs`, `style`, `refactor`, `perf`, `test`.
   - Breaking changes: `!` after type/scope (e.g. `feat!:`) and/or a `BREAKING CHANGE:` footer.
   - Default to a one-liner description; add a body/footer only when there's non-obvious context worth recording.
-
-## Steering Configuration
-- Load entire `.kiro/steering/` as project memory
-- Default files: `product.md`, `tech.md`, `structure.md`
-- Custom files are supported (managed via `/kiro:steering-custom`)
