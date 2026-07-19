@@ -41,6 +41,8 @@ Focus on capabilities and outcomes, not code structure.
 - Progress incrementally (no big jumps in complexity)
 - Respect architecture boundaries defined in design.md (Architecture Pattern & Boundary Map)
 - Honor interface contracts documented in design.md
+- Implicitly comply with steering's type-safety and naming standards (e.g. no `dynamic`/`Map<String, dynamic>`, explicit types/returns, verbose naming) — do not restate these per task; they apply uniformly and are validated at implementation/review time
+- For any task that builds or modifies a screen/page/widget, reference the specific `design.md` (repo root) token(s)/component name(s) it should use in the detail bullets instead of leaving visual decisions unspecified
 - Use major task summaries sparingly—omit detail bullets if the work is fully captured by child tasks.
 
 **End with integration tasks** to wire everything together.
@@ -108,6 +110,15 @@ Focus on capabilities and outcomes, not code structure.
 - Documentation tasks
 - User testing
 - Marketing/business activities
+
+### 9. Learning Graph Tagging
+
+Cross-check every task against `.kiro/steering/learning-graph.md` before finalizing the task list.
+
+- A task whose **primary deliverable** is a USER-IMPLEMENT topic (architecture/design tradeoffs, Flutter animations, native integrations, on-device AI, MCP server implementation) must be tagged `[USER-IMPLEMENT]` in its task description.
+- Do not tag a task merely because it touches a related file or calls into USER-IMPLEMENT code — tag only when the task's own deliverable IS the USER-IMPLEMENT work.
+- Tagging does not change how the task is described — still natural language, no code, no signatures. The tag only routes the task to stub-only handling at implementation time (`/kiro-impl`).
+- Untagged tasks are AI-GENERATE by default.
 
 ## Task Plan Review Gate
 

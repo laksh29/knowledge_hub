@@ -16,6 +16,7 @@ metadata:
   - Clear task progression with proper hierarchy
   - Natural language descriptions focused on capabilities
   - A lightweight task-plan sanity review confirms the task graph is executable before `tasks.md` is written
+  - Every task is cross-checked against `.kiro/steering/learning-graph.md` and tagged `[USER-IMPLEMENT]` where its primary work matches a USER-IMPLEMENT topic
 
 ## Execution Steps
 
@@ -26,6 +27,9 @@ Otherwise, load all necessary context:
 - `.kiro/specs/{feature}/spec.json`, `requirements.md`, `design.md`
 - `.kiro/specs/{feature}/tasks.md` (if exists, for merge mode)
 - Core steering context: `product.md`, `tech.md`, `structure.md`
+- `.kiro/steering/learning-graph.md` — read in full; it is the authoritative USER-IMPLEMENT/AI-GENERATE split used in Step 2's tagging pass
+- `flutter-clean-architecture-guide.md` (repo root) — the project's binding Flutter Clean Architecture & TDD standard; use it to keep task boundaries aligned with domain/data/presentation layering and TDD expectations (tests-first for `domain`/`data`/Bloc-Cubit, `mocktail`/`bloc_test`)
+- `design.md` (repo root, the UI design system — distinct from `.kiro/specs/{feature}/design.md`) — read whenever the spec's Components & Interfaces includes screens/pages/widgets, so UI task details can name the specific tokens/components to use
 - Additional steering files only when directly relevant to requirements coverage, design boundaries, runtime prerequisites, or team conventions that affect task executability
 
 - Determine execution mode:
@@ -56,10 +60,18 @@ After all parallel research completes, synthesize findings before generating tas
 - Verify task progression is logical and incremental
 - Ensure each executable sub-task includes at least one detail bullet that states what "done" looks like in observable terms
 - Keep normal implementation tasks within a single responsibility boundary; if work crosses boundaries, make it an explicit integration task
+- For any task that builds or modifies a screen/page/widget, reference the specific `design.md` (repo root) token(s)/component name(s) it should use in the detail bullets (e.g. "use `{component.button-primary}` and `{colors.primary}`") instead of leaving visual decisions unspecified
 - Apply `(P)` markers to tasks that satisfy parallel criteria when `!sequential`
 - Explicitly note dependencies preventing `(P)` when tasks appear parallel but are not safe
 - If sequential mode is true, omit `(P)` entirely
 - If existing tasks.md found, merge with new content
+
+**Tag USER-IMPLEMENT tasks** (cross-check against `.kiro/steering/learning-graph.md`):
+- For every task, check whether its primary work falls under a USER-IMPLEMENT topic (architecture/design tradeoffs, Flutter animations, native integrations, on-device AI, MCP server implementation)
+- If it matches, prepend `[USER-IMPLEMENT]` to the task description (e.g. `- [ ] 2.1 [USER-IMPLEMENT] Implement the reservation-card entrance animation`)
+- Do not tag a task USER-IMPLEMENT because it merely touches a related file — tag it only when the task's primary deliverable IS the USER-IMPLEMENT topic itself
+- Everything else is AI-GENERATE by default — no tag needed
+- This tagging only marks scope for `/kiro-impl`; it does not change how this skill generates the task description itself (still natural language, no code)
 
 ### Step 3: Review Task Plan
 
@@ -74,6 +86,7 @@ After all parallel research completes, synthesize findings before generating tas
   - Each executable sub-task includes an observable completion bullet
   - No implicit prerequisites remain hidden
   - `_Depends:_`, `_Boundary:_`, and `(P)` markers still match the dependency graph and architecture boundaries
+  - Every `[USER-IMPLEMENT]` tag is justified by the task's primary deliverable matching a learning-graph topic, and no matching task was left untagged
 - If issues are task-plan-local, repair the draft and re-run the review gate before writing
 - Keep the review bounded to at most 2 repair passes
 - If review exposes a real requirements/design gap or contradiction, stop and send the user back to requirements/design instead of inventing filler tasks
@@ -141,12 +154,14 @@ Provide brief summary in the language specified in spec.json:
    - Total: X major tasks, Y sub-tasks
    - All Z requirements covered
    - Average task size: 1-3 hours per sub-task
+   - `[USER-IMPLEMENT]` tasks: N tagged (list task IDs and matching learning-graph topics)
 3. **Quality Validation**:
    - All requirements mapped to tasks
    - Design coverage and runtime prerequisites reviewed
    - Task dependencies verified
    - Task plan review gate passed
    - Independent task-graph sanity review passed
+   - Learning graph cross-check complete — `[USER-IMPLEMENT]` tags applied
    - Testing tasks included
 4. **Next Action**: Review tasks and proceed when ready
 
