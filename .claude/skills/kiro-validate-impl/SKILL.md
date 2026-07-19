@@ -58,6 +58,8 @@ Otherwise, for each detected feature:
 - Read `.kiro/specs/<feature>/design.md` for design structure
 - Read `.kiro/specs/<feature>/tasks.md` for task list and Implementation Notes
 - Core steering context: `product.md`, `tech.md`, `structure.md`
+- Read `flutter-clean-architecture-guide.md` (repo root) — the project's binding Flutter Clean Architecture & TDD standard and the source for its §9 PR Review Checklist, used below
+- If implementation touches any screen/page/widget, read `design.md` (repo root, the UI design system) — used for the UI alignment check below
 - Additional steering files only when directly relevant to the validated boundaries, runtime prerequisites, integrations, domain rules, security/performance constraints, or team conventions that affect the GO/NO-GO call
 
 **Discover canonical validation commands**:
@@ -103,6 +105,16 @@ These checks apply at the feature level. Use command output as the primary signa
 - Examples if relevant: open the root URL in a headless browser and require zero boot-time console errors; launch Electron and wait for the main process ready signal and first renderer load; run a CLI with `--help`; start a service and hit its health endpoint.
 - If boot produces a runtime crash, unhandled exception, module-load failure, native ABI mismatch, or missing required env/config → NO-GO.
 - If no trustworthy smoke command can be identified, or the required runtime environment is unavailable → `MANUAL_VERIFY_REQUIRED`
+
+**D.5. Type Safety & Naming Check (Dart/Flutter)**
+- Grep the changed files for `dynamic`, `Object?` used as a stand-in type, and `Map<String, dynamic>` outside `fromJson`/`toJson`/Model boundaries — flag any hit as "Type safety violation"
+- Spot-check that public functions/methods and non-trivial variables declare explicit types/return types — flag inferred/implicit typing on non-obvious cases as "Type safety violation"
+- Spot-check naming: flag generic/ambiguous identifiers (`data`, `temp`, `handler`, `x`) as "Naming violation"
+- Grep test files for `mockito` or positional `when(x.method(...))` — flag as "Mocking violation" (per `flutter-clean-architecture-guide.md` §8.2/§9)
+
+**D.6. UI Design System Alignment Check** (when the feature touched a screen/page/widget)
+- Grep widget/screen files for raw hex colors (e.g. `Color(0xFF...)`), literal `TextStyle(fontSize: ...)` values, and magic-number `EdgeInsets`/`BorderRadius` — flag any not sourced from a typed design-token class as "Design system violation"
+- Cross-check the values used against `design.md` (repo root) tokens/components; if a value doesn't map to a documented token, flag as "Design system violation" unless it's explicitly listed under `design.md`'s "Known Gaps"
 
 #### Judgment Checks (read code, compare to spec)
 
@@ -159,6 +171,8 @@ Provide summary in the language specified in spec.json:
   - TBD/TODO grep: CLEAN | <count> matches
   - Secrets grep: CLEAN | <count> matches
   - Smoke boot: PASS | FAIL | MANUAL_REQUIRED
+  - Type safety/naming/mocking: CLEAN | <count> violations
+  - UI design system alignment: CLEAN | <count> violations | N/A
 - INTEGRATION:
   - Cross-task contracts: <status>
   - Shared state consistency: <status>
