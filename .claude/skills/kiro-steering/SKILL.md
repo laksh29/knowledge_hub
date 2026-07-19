@@ -46,7 +46,8 @@ Check `.kiro/steering/` status:
 ## Bootstrap Flow
 
 1. Load templates from `.kiro/settings/templates/steering/`
-2. Analyze codebase (JIT):
+2. **Check for a project-designated standard document** (e.g. `flutter-clean-architecture-guide.md`, `design.md`, or similarly named `*-architecture-guide.md`/`*-coding-standard.md`/`*-design-system.md` files at repo root). If one exists, read it directly and treat it as authoritative — condense its rules into `tech.md`/`structure.md` (or a dedicated custom steering file, e.g. `design-system.md`) and reference it by name rather than re-deriving conventions from scratch.
+3. Analyze codebase (JIT):
 
 #### Parallel Research
 
@@ -57,13 +58,13 @@ The following research areas are independent and can be executed in parallel:
 
 After all parallel research completes, synthesize patterns for steering files.
 
-3. Extract patterns (not lists):
+4. Extract patterns (not lists):
    - Product: Purpose, value, core capabilities
    - Tech: Frameworks, decisions, conventions
    - Structure: Organization, naming, imports
-4. Generate steering files (follow templates)
-5. Load principles from `rules/steering-principles.md` from this skill's directory
-6. Present summary for review
+5. Generate steering files (follow templates)
+6. Load principles from `rules/steering-principles.md` from this skill's directory
+7. Present summary for review
 
 **Focus**: Patterns that guide decisions, not catalogs of files/dependencies.
 

@@ -85,6 +85,13 @@ Never include:
 ## File-Specific Focus
 
 - **product.md**: Purpose, value, business context (not exhaustive features)
-- **tech.md**: Key frameworks, standards, conventions (not all dependencies)
+- **tech.md**: Key frameworks, standards, conventions, and the project's binding type-safety/naming rules (not all dependencies)
 - **structure.md**: Organization patterns, naming rules (not directory trees)
 - **Custom files**: Specialized patterns (API, testing, security, etc.)
+
+## Project-Specific Standard Documents
+
+Some projects designate a single external document as the binding coding standard (e.g. a `*-clean-architecture-guide.md` at repo root) or design system (e.g. `design.md`). When one exists:
+- Reference it explicitly from `tech.md`/`structure.md`/a dedicated custom steering file rather than duplicating its full content — steering stays a short pointer plus a condensed summary of its most load-bearing rules.
+- Treat every rule in that document as mandatory unless it explicitly says "guideline."
+- Skills that design, generate tasks for, implement, or review code must read that document directly, not just its steering summary, since steering intentionally omits code-level examples and checklists.
