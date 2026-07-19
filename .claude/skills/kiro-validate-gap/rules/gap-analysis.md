@@ -16,6 +16,7 @@ Analyze the gap between requirements and existing codebase to inform implementat
   - Naming, layering, dependency direction
   - Import/export patterns and dependency hotspots
   - Testing placement and approach
+  - Type-safety compliance: flag existing `dynamic`, `Object?`-as-type, or cross-layer `Map<String, dynamic>` usage as technical debt to note (not silently propagate into new work)
 
 - Note integration surfaces:
   - Data models/schemas, API clients, auth mechanisms
