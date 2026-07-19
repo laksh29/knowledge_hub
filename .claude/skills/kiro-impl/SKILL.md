@@ -20,6 +20,7 @@ You operate in two modes:
   - Tasks marked as completed in tasks.md
   - Implementation aligns with design and requirements
   - Independent reviewer approves each task before completion
+  - Tasks classified USER-IMPLEMENT are stubbed (signature + design note + failing test) and never silently implemented
 
 ## Execution Steps
 
@@ -29,6 +30,9 @@ If steering/spec context is already available from conversation, skip redundant 
 Otherwise, load all necessary context:
 - `.kiro/specs/{feature}/spec.json`, `requirements.md`, `design.md`, `tasks.md`
 - Core steering context: `product.md`, `tech.md`, `structure.md`
+- `.kiro/steering/learning-graph.md` — read in full, every run, before implementing any task. It is the authoritative USER-IMPLEMENT/AI-GENERATE split (see Step 2.5)
+- `flutter-clean-architecture-guide.md` (repo root) — the project's binding Flutter Clean Architecture & TDD standard. Every rule in it is mandatory unless marked "guideline." Its §9 PR Review Checklist is the implementation-time acceptance bar
+- `design.md` (repo root, the UI design system) — read before implementing any screen/page/widget task; every color/typography/spacing/radius/elevation value must come from its tokens/components via the project's typed design-token classes, never a hardcoded literal
 - Additional steering files only when directly relevant to the selected task's boundary, runtime prerequisites, integrations, domain rules, security/performance constraints, or team conventions that affect implementation or validation
 - Relevant local agent skills or playbooks only when they clearly match the task's host environment or use case; read the specific artifact(s) you need, not entire directories
 
@@ -69,6 +73,15 @@ After all parallel research completes, synthesize implementation brief before st
 - For each selected task, check `_Depends:_` annotations -- verify referenced tasks are `[x]`
 - If prerequisites incomplete, execute them first or warn the user
 - Use `_Boundary:_` annotations to understand the task's component scope
+
+### Step 2.5: Learning Graph Classification
+
+Classify every task in the queue against `.kiro/steering/learning-graph.md` before dispatching any implementer.
+
+- If the task is already marked `[USER-IMPLEMENT]` in tasks.md, treat it as USER-IMPLEMENT.
+- If it is unmarked, check whether its primary work matches a USER-IMPLEMENT topic anyway (architecture/design tradeoffs, Flutter animations, native integrations, on-device AI, MCP server implementation) — `tasks.md` may predate this rule or `/kiro-spec-tasks` may not have tagged it. If it matches, treat it as USER-IMPLEMENT and retroactively add the `[USER-IMPLEMENT]` marker to `tasks.md`.
+- Everything else is AI-GENERATE — proceed with the normal implementer/reviewer flow (Step 3).
+- Route every task classified USER-IMPLEMENT through **Step 3.5: USER-IMPLEMENT Handling** instead of the normal implementer/reviewer flow.
 
 ### Step 3: Execute Implementation
 
@@ -174,6 +187,38 @@ Before writing any code, read the relevant sections of requirements.md and desig
 - **REVIEW**: Apply `kiro-review` before marking the task complete. If the host supports fresh subagents in manual mode, use a fresh reviewer; otherwise perform the review in the main context using the `kiro-review` protocol. Do NOT continue until the verdict is parseably `APPROVED`.
 - **MARK COMPLETE**: Only after review returns `APPROVED`, apply `kiro-verify-completion`, then update the checkbox from `- [ ]` to `- [x]` in tasks.md.
 
+### Step 3.5: USER-IMPLEMENT Handling
+
+For any task classified USER-IMPLEMENT in Step 2.5, do not dispatch the normal implementer and do not write the real logic. Instead:
+
+**a) Generate stub artifacts only** — exactly three things, nothing more:
+1. **Interface/function signature** — the real type signature (class, method, function), with an unimplemented body (`throw UnimplementedError('...')` or the language-appropriate equivalent) — no working logic inside.
+2. **A short design note** — a few sentences on the intended approach, key tradeoffs, and why this shape was chosen. Not a full design doc, just enough for the user to start from.
+3. **A failing test** — one test that exercises the intended behavior and fails in the RED state because the real implementation doesn't exist yet.
+
+**Never silently write the real implementation for a USER-IMPLEMENT task — not even a partial or "obvious" version — regardless of task simplicity or confidence in the approach.**
+
+**b) Commit the stub**:
+- Stage only the stub/signature file(s), the failing test, and `tasks.md`
+- **NEVER** use `git add -A` or `git add .`
+- Commit message: `test(<feature>): stub <task-id> for user implementation [USER-IMPLEMENT]`
+
+**c) Mark tasks.md**:
+- Leave the checkbox unchecked (`- [ ]`) — the task is not done until the user implements it
+- Append `_USER-IMPLEMENT: stub ready — signature + design note + failing test committed, awaiting your implementation_` to the task's detail bullets
+
+**d) Stop and notify the user explicitly**:
+- **What the task is**: task ID and description
+- **Why it matches the learning graph**: the specific USER-IMPLEMENT topic/bullet it falls under
+- **What's been prepared**: file paths for the signature, design note, and failing test, plus a one-line summary of the approach
+
+**e) Halt, don't auto-continue**:
+- In autonomous mode, do NOT proceed to the next task automatically after stubbing a USER-IMPLEMENT task — stop the run and wait for the user's direction (they may implement it now, or ask to continue with remaining non-dependent tasks)
+- In manual mode, stop after this task the same way
+
+**f) Architecture/design tradeoffs are a debate, not a rubber stamp**:
+- If the USER-IMPLEMENT task is itself an architecture/design tradeoff, write the design note as a real recommendation, not a menu of options — then push back at least once on the user's reasoning if they dispute it, before agreeing or correcting them
+
 ### Step 4: Final Validation
 
 **Autonomous mode**:
@@ -205,6 +250,12 @@ For tasks that add or change behavior, enforce RED → GREEN with a feature flag
 - **Bounded Review Rounds**: Max 2 implementer re-dispatch rounds per reviewer rejection, then debug
 - **Bounded Debug**: Max 2 debug rounds per task (debug + re-implementation per round); if still failing → BLOCKED
 - **Bounded Remediation**: Cap final-validation remediation at 3 rounds
+- **Learning Graph Compliance**: Never write a full implementation for a task classified USER-IMPLEMENT (Step 2.5) — stub + design note + failing test only, then stop per Step 3.5
+- **Type Safety** (Dart/Flutter): No `dynamic` anywhere; no `Object?` as a stand-in type; no `Map<String, dynamic>` crossing layer boundaries (only inside `fromJson`/`toJson` at the Model boundary); every variable declaration, function/method parameter, and return type explicit and concrete
+- **Naming**: Every class, variable, field, parameter, and function name is verbose and contextual — describes precisely what it holds or does
+- **Mocking**: `mocktail` only — never `mockito`, never positional `when(x.method())`
+- **Architecture Boundaries**: Respect `domain`/`data`/`presentation` dependency direction; Bloc/Cubit's only public surface is `state`; DataSource is the only layer allowed to `throw`
+- **UI/Visual Design**: Any widget/screen/page pulls colors, typography, spacing, radius, and elevation from `design.md` (repo root) tokens/components via typed constants — never an inline hex value, raw px number, or ad hoc font size/weight; flag anything not covered by `design.md`
 
 ## Output Description
 
@@ -216,6 +267,8 @@ For tasks that add or change behavior, enforce RED → GREEN with a feature flag
 **Manual mode**:
 1. Tasks executed: task numbers and test results
 2. Status: completed tasks marked in tasks.md, remaining tasks count
+
+**USER-IMPLEMENT tasks** (either mode): report separately per Step 3.5(d) — task ID, matching learning-graph topic, and the prepared stub's file paths — regardless of autonomous/manual mode.
 
 **Format**: Concise, in the language specified in spec.json.
 
@@ -234,6 +287,11 @@ For tasks that add or change behavior, enforce RED → GREEN with a feature flag
 **All Tasks Blocked**:
 - Stop and report all blocked tasks with reasons
 - Human review needed to resolve blockers
+
+**USER-IMPLEMENT Task Encountered**:
+- Stop after generating the stub (Step 3.5) — do not auto-continue to remaining tasks
+- Report: task ID, matching learning-graph topic, and stub file paths
+- Resume only on explicit user direction
 
 **Spec Conflicts with Reality**:
 - If a requirement or design conflicts with reality (API doesn't exist, platform limitation), block the task with `_Blocked: <reason>_` -- do not silently work around it
