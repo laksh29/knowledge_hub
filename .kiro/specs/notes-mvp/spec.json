@@ -1,0 +1,22 @@
+{
+  "feature_name": "notes-mvp",
+  "created_at": "2026-07-25T12:24:27Z",
+  "updated_at": "2026-07-25T18:20:00Z",
+  "language": "en",
+  "phase": "requirements-generated",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": false,
+      "approved": false
+    },
+    "tasks": {
+      "generated": false,
+      "approved": false
+    }
+  },
+  "ready_for_implementation": false
+}
