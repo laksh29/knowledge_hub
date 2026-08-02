@@ -7,12 +7,13 @@
   - Observable: dependency resolution succeeds with all three local packages recognized as buildable, empty packages
   - _Requirements: 8.1_
 
-- [ ] 1.2 (P) Add the reactive stream-based use case pattern to the app's shared architecture kernel
+- [x] 1.2 (P) Add the reactive stream-based use case pattern to the app's shared architecture kernel
   - Add the two reactive base classes (params and no-params variants) alongside the four existing Future-based ones, matching the pattern now documented in the Clean Architecture guide
   - Ensure the reactive contract mirrors the existing error-handling convention so a failure can never be silently dropped mid-stream
   - Observable: a passing test demonstrates a sample reactive use case forwarding both a success stream and a failure without alteration
   - _Requirements: 4.4, 5.2, 5.4, 5.5, 6.1, 6.2, 6.3, 10.1_
   - _Boundary: core/usecase_
+  - _Note: also created `core/error/{failure,result}.dart` (Result/Failure types) as an unowned implicit prerequisite — `core/usecase/usecase.dart` cannot compile without them and no other task claims `core/error/` as its boundary. Content matches guide §4.1/§4.2 exactly; flagged here so it isn't silently absorbed._
 
 - [ ] 1.3 (P) [USER-IMPLEMENT] Build the SQLite WAL-mode-and-full-text-search toolkit package
   - Implement a WAL-mode local database opener parameterized only by a file name
