@@ -1,7 +1,7 @@
 # Implementation Plan — notes-mvp
 
 - [ ] 1. Foundation: shared kernel and local persistence setup
-- [ ] 1.1 Add the feature's new dependencies and scaffold the three standalone reusable packages
+- [x] 1.1 Add the feature's new dependencies and scaffold the three standalone reusable packages
   - Add local path dependencies for the three new packages plus `drift`, `sqlite3`, `uuid`, and `bloc_concurrency` to the app's dependency manifest
   - Create the three package directories (SQLite WAL+FTS5 toolkit, Markdown code-block editor, app-lifecycle service), each with its own standalone package manifest and no dependency on the app itself
   - Observable: dependency resolution succeeds with all three local packages recognized as buildable, empty packages

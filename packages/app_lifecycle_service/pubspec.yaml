@@ -1,0 +1,23 @@
+name: app_lifecycle_service
+description: >
+  Adapts WidgetsBindingObserver app-lifecycle transitions into a
+  Stream<AppLifecycleState>. No dependency on any consuming app's types and
+  no dependency-injection framework annotations.
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.4
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
