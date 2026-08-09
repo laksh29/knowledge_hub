@@ -8,5 +8,7 @@ Zero dependency on any consuming application's domain types — copyable
 verbatim into any Flutter project per `flutter-clean-architecture-guide.md`
 §3.1's "zero project context" test.
 
-Currently a scaffolded, empty placeholder — implementation lands in the
-`notes-mvp` feature's task 1.5.
+Detects fenced (```` ``` ````) code blocks in plain text via `RegExp` and
+delegates per-language tokenization to `package:highlight`, styling tokens
+from a caller-supplied theme. Text outside a fence stays completely
+unstyled. Supports at least Dart, JavaScript, Python, Swift, and Kotlin.

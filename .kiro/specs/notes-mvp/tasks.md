@@ -29,12 +29,13 @@
   - _Requirements: 3.3_
   - _Boundary: packages/app_lifecycle_service_
 
-- [ ] 1.5 (P) Build the Markdown fenced-code-block editing package
+- [x] 1.5 (P) Build the Markdown fenced-code-block editing package
   - Implement fenced-code-block detection over plain text input and per-language syntax tokenization/coloring confined to detected code-block ranges, for at least Dart, JavaScript, Python, Swift, and Kotlin
   - Accept all styling (fonts, colors) as caller-supplied parameters rather than any baked-in value
   - Observable: a passing package-level test verifies text outside a fenced code block remains completely unstyled while text inside one is tokenized per the detected language
   - _Requirements: 2.3, 2.4_
   - _Boundary: packages/markdown_code_block_editor_
+  - _Note: uses `package:highlight` directly (no `flutter_code_editor` dependency) — sanctioned in research.md as the "thin wrapper" alternative. `design.md`'s Technology Stack table still says "built on `flutter_code_editor`/`highlight`," which is now stale wording, not a code deviation._
 
 - [ ] 1.6 (P) Establish the app's typed design-system tokens and reusable presentation primitives
   - Create typed constant classes mirroring the design system's colors, typography, spacing, radius, and elevation values
