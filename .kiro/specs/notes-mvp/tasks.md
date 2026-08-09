@@ -22,9 +22,8 @@
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 6.2, 6.3_
   - _Boundary: packages/sqlite_wal_fts_toolkit_
   - _USER-IMPLEMENT: implemented and reviewer-approved. Uses drift's `NativeDatabase` + a `setup` callback (not `drift_flutter`, which needs Flutter) to stay pure-Dart; FTS5 round-trip (insert/update/delete → search) verified against real SQLite, not just string assertions._
-  - _USER-IMPLEMENT: stub ready — signature + design note + failing test committed, awaiting your implementation. Files: `lib/src/wal_mode_database_opener.dart`, `lib/src/fts5_virtual_table_builder.dart` (signatures + design notes), `test/sqlite_wal_fts_toolkit_test.dart` (3 failing tests expressing intended behavior)._
 
-- [ ] 1.4 (P) Build the app-lifecycle-to-stream service package
+- [x] 1.4 (P) Build the app-lifecycle-to-stream service package
   - Implement a lifecycle-observing service exposing app-foreground/background/detached transitions as a stream, with no dependency on the app itself or on any dependency-injection framework
   - Observable: a passing package-level test verifies each lifecycle transition is emitted on the stream exactly once
   - _Requirements: 3.3_

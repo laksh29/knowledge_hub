@@ -3,6 +3,8 @@
 /// a `BuildContext`.
 ///
 /// This package has zero dependency on any consuming application's types and
-/// no dependency-injection framework annotations — implementation is added
-/// in a later task (see notes-mvp tasks.md, task 1.4).
+/// no dependency-injection framework annotations.
 library;
+
+export 'src/app_lifecycle_service.dart';
+export 'src/app_lifecycle_service_impl.dart';
