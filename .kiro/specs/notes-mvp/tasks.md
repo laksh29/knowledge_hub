@@ -15,12 +15,13 @@
   - _Boundary: core/usecase_
   - _Note: also created `core/error/{failure,result}.dart` (Result/Failure types) as an unowned implicit prerequisite — `core/usecase/usecase.dart` cannot compile without them and no other task claims `core/error/` as its boundary. Content matches guide §4.1/§4.2 exactly; flagged here so it isn't silently absorbed._
 
-- [ ] 1.3 (P) [USER-IMPLEMENT] Build the SQLite WAL-mode-and-full-text-search toolkit package
+- [x] 1.3 (P) [USER-IMPLEMENT] Build the SQLite WAL-mode-and-full-text-search toolkit package
   - Implement a WAL-mode local database opener parameterized only by a file name
   - Implement full-text-search virtual-table and sync-trigger SQL generation parameterized only by table and column names, with no reference to any app-specific concept
   - Observable: a passing package-level test suite verifies WAL mode is active on a freshly opened database and that generated full-text-search SQL round-trips an insert-then-search against arbitrary table/column names
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 6.2, 6.3_
   - _Boundary: packages/sqlite_wal_fts_toolkit_
+  - _USER-IMPLEMENT: implemented and reviewer-approved. Uses drift's `NativeDatabase` + a `setup` callback (not `drift_flutter`, which needs Flutter) to stay pure-Dart; FTS5 round-trip (insert/update/delete → search) verified against real SQLite, not just string assertions._
   - _USER-IMPLEMENT: stub ready — signature + design note + failing test committed, awaiting your implementation. Files: `lib/src/wal_mode_database_opener.dart`, `lib/src/fts5_virtual_table_builder.dart` (signatures + design notes), `test/sqlite_wal_fts_toolkit_test.dart` (3 failing tests expressing intended behavior)._
 
 - [ ] 1.4 (P) Build the app-lifecycle-to-stream service package

@@ -9,3 +9,4 @@ pubspec.lock
 /build/
 /coverage/
 .flutter-plugins-dependencies
+*.sqlite

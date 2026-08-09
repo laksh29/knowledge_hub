@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
+import 'package:sqlite3/sqlite3.dart' as sqlite3;
 import 'package:sqlite_wal_fts_toolkit/sqlite_wal_fts_toolkit.dart';
 import 'package:test/test.dart';
 
@@ -21,8 +24,21 @@ void main() {
   // buildFts5SyncTriggerSql throw UnimplementedError.
   group('openWalModeSqliteDatabase (USER-IMPLEMENT)', () {
     test('opens a database with WAL journal mode active', () async {
+      const String fileName = 'sqlite_wal_fts_toolkit_test_wal_mode.sqlite';
+      addTearDown(() {
+        final File file = File(fileName);
+        if (file.existsSync()) file.deleteSync();
+        // WAL mode also leaves a "-shm"/"-wal" sidecar file next to the
+        // main database file until it's cleanly closed with no pending
+        // writes; clean those up too so nothing lingers between runs.
+        for (final String suffix in const ['-shm', '-wal']) {
+          final File sidecar = File('$fileName$suffix');
+          if (sidecar.existsSync()) sidecar.deleteSync();
+        }
+      });
+
       final QueryExecutor executor = await openWalModeSqliteDatabase(
-        fileName: 'sqlite_wal_fts_toolkit_test_wal_mode.sqlite',
+        fileName: fileName,
       );
       await executor.ensureOpen(_TestExecutorUser());
 
@@ -66,5 +82,77 @@ void main() {
       expect(sql, contains('AFTER UPDATE'));
       expect(sql, contains('AFTER DELETE'));
     });
+  });
+
+  group('FTS5 round-trip (USER-IMPLEMENT)', () {
+    test(
+      'insert, update, and delete on the content table keep the FTS5 index in sync',
+      () {
+        // A TEXT primary key deliberately matches design.md's hidden-rowid-mapping
+        // risk scenario (notes.id is a UUID string, not an INTEGER) -- this is the
+        // exact case where content_rowid='rowid' must rely on SQLite's implicit
+        // hidden rowid rather than the declared primary key.
+        final sqlite3.Database db = sqlite3.sqlite3.openInMemory();
+        addTearDown(db.close);
+
+        db.execute('''
+          CREATE TABLE items (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL
+          );
+        ''');
+
+        db.execute(
+          buildFts5ExternalContentTableSql(
+            virtualTableName: 'items_fts',
+            contentTableName: 'items',
+            indexedColumns: const ['title', 'body'],
+          ),
+        );
+
+        db.execute(
+          buildFts5SyncTriggerSql(
+            virtualTableName: 'items_fts',
+            contentTableName: 'items',
+            indexedColumns: const ['title', 'body'],
+          ),
+        );
+
+        // Insert -> the new row must be found by a search on its own text.
+        db.execute('''
+          INSERT INTO items (id, title, body)
+          VALUES ('item-1', 'Grocery list', 'Buy milk and eggs');
+        ''');
+        expect(
+          db.select("SELECT rowid FROM items_fts WHERE items_fts MATCH 'milk';"),
+          hasLength(1),
+          reason: 'insert trigger should have indexed the new row',
+        );
+
+        // Update -> the old term must disappear and the new term must be found.
+        db.execute('''
+          UPDATE items SET body = 'Buy bread and cheese' WHERE id = 'item-1';
+        ''');
+        expect(
+          db.select("SELECT rowid FROM items_fts WHERE items_fts MATCH 'milk';"),
+          isEmpty,
+          reason: 'update trigger should have removed the old indexed text',
+        );
+        expect(
+          db.select("SELECT rowid FROM items_fts WHERE items_fts MATCH 'bread';"),
+          hasLength(1),
+          reason: 'update trigger should have indexed the new text',
+        );
+
+        // Delete -> the row must no longer be found by any search.
+        db.execute("DELETE FROM items WHERE id = 'item-1';");
+        expect(
+          db.select("SELECT rowid FROM items_fts WHERE items_fts MATCH 'bread';"),
+          isEmpty,
+          reason: 'delete trigger should have removed the row from the index',
+        );
+      },
+    );
   });
 }
