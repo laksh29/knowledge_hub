@@ -187,7 +187,7 @@ graph TB
 | Local persistence (engine choice) | `drift` on `package:sqlite3`, WAL mode | Single on-device database for notes/folders/tags/FTS5 index | Replaces the PRD's original Hive default — see `research.md` |
 | Local persistence (reusable setup) | `packages/sqlite_wal_fts_toolkit` (local path package) | WAL-mode opener + FTS5 virtual-table/trigger SQL builders, consumed by `notes_database.dart` | Zero dependency on this app's types — portable to other projects |
 | Full-text search | SQLite FTS5 (external-content virtual table), `bm25()`/`highlight()` | Ranked, highlighted search over title+body | Native to Drift, no extra library |
-| Code-block editing (reusable) | `packages/markdown_code_block_editor` (local path package), built on `flutter_code_editor`/`highlight` | Fenced-code-block-aware `TextEditingController` + highlighting widget, styled via caller-supplied parameters | Zero dependency on this app's types or `design.md` values — portable to other projects |
+| Code-block editing (reusable) | `packages/markdown_code_block_editor` (local path package), built on `package:highlight` directly (not `flutter_code_editor` — avoids pulling in its full editor-widget chrome, per research.md's sanctioned alternative) | Fenced-code-block-aware `TextEditingController` + highlighting widget, styled via caller-supplied parameters | Zero dependency on this app's types or `design.md` values — portable to other projects |
 | App lifecycle (reusable) | `packages/app_lifecycle_service` (local path package) | `WidgetsBindingObserver` wrapped as `Stream<AppLifecycleState>`, consumed by `NoteEditorBloc` | Zero dependency on this app's types or DI annotations — portable to other projects |
 | Identifiers | `uuid` (v4) | Client-generated globally-unique IDs for notes/folders/tags | Required now to not block v1.1 Supabase sync |
 | DI | `get_it` + `injectable` | Wires repositories, data sources, and Blocs/Cubits (latter via `BlocProvider`, not `get_it` singletons); manually registers the three `packages/*` implementations since they carry no DI annotations themselves | Per steering |
@@ -210,7 +210,7 @@ packages/
 │       ├── markdown_code_block_editor.dart      # barrel export
 │       └── src/
 │           ├── code_block_aware_text_editing_controller.dart  # RegExp-based fenced-code-block detection, builds styled TextSpans
-│           └── code_block_highlighted_text_field.dart          # widget wrapping the controller + flutter_code_editor tokenizer; accepts caller-supplied TextStyle/theme params
+│           └── code_block_highlighted_text_field.dart          # widget wrapping the controller + package:highlight tokenizer; accepts caller-supplied TextStyle/theme params
 └── app_lifecycle_service/                       # NEW standalone package — zero dependency on knowledge_hub types, no DI annotations
     ├── pubspec.yaml
     └── lib/
@@ -453,7 +453,7 @@ stateDiagram-v2
 | StreamUseCase / StreamUseCaseNoParams | Core (`core/usecase/`) | Reactive `UseCase` base classes | 4.4, 5.2, 5.4, 5.5, 6.1-6.3, 10.1 | `Result`/`Failure` (P0) | Service |
 | AppLifecycleService | Reusable package (`packages/app_lifecycle_service`) | Lifecycle transitions as a stream | 3.3 | `flutter` only (P0) | Service |
 | SqliteWalFtsToolkit | Reusable package (`packages/sqlite_wal_fts_toolkit`) | WAL opener + FTS5 SQL builders | 3.1-3.4, 6.2, 6.3 | `sqlite3`, `drift` (P0) | Service |
-| MarkdownCodeBlockEditor | Reusable package (`packages/markdown_code_block_editor`) | Fenced-code-block detection + highlighting | 2.3, 2.4 | `flutter_code_editor`/`highlight` (P1) | State |
+| MarkdownCodeBlockEditor | Reusable package (`packages/markdown_code_block_editor`) | Fenced-code-block detection + highlighting | 2.3, 2.4 | `highlight` (P1) | State |
 | KnowledgeHubColors/TextStyles/Spacing/Radii/Elevation, PrimaryButtonWidget, SecondaryButtonWidget, TertiaryTextButtonWidget, CircularIconButtonWidget, AppTextFieldWidget | Core (`core/design_system/`) | Typed `design.md` tokens + reusable presentational primitives | 2, 3, 4, 5, 6, 7 (cross-cutting) | `design.md` (P0) | — |
 | NoteEditorBloc | Presentation | Capture/edit/autosave orchestration | 1, 2, 3 | SaveNoteContentUc (P0), AppLifecycleService (P0), CreateNoteUc (P0) | State |
 | SearchBloc | Presentation | Debounced search orchestration | 6 | WatchNoteSearchResultsUc (P0) | State |
@@ -614,7 +614,7 @@ String buildFts5SyncTriggerSql({
 
 **Responsibilities & Constraints**
 - Exposes a `TextEditingController` subclass and a companion widget; both take styling (`TextStyle`s, a highlight theme) as constructor parameters — no `design.md` token or hex value is baked into the package itself.
-- Delegates per-language tokenization to `flutter_code_editor`'s `highlight`-based engine; the package's own code is the fence-detection/`TextSpan`-building glue, not a reimplementation of syntax highlighting.
+- Delegates per-language tokenization directly to `package:highlight` (not `flutter_code_editor` — avoids pulling in its full editor-widget chrome for a use case that only needs the tokenizer); the package's own code is the fence-detection/`TextSpan`-building glue, not a reimplementation of syntax highlighting.
 
 **Contracts**: State [x] (the controller carries the current parsed/highlighted span state)
 
@@ -628,7 +628,7 @@ class CodeBlockAwareTextEditingController extends TextEditingController {
 **Implementation Notes**
 - Integration: the app's `code_block_highlighted_text_widget.dart` (in `lib/features/notes/presentation/widgets/`) is a thin composition wrapper supplying `design.md`-derived `TextStyle` values into this package's widget — the citation obligation from the design-system steering is satisfied at that wrapper, not inside the package.
 - Validation: package-level tests cover fence detection/highlighting in isolation (no `knowledge_hub` fixtures); the app-level widget test (if any, per guide §8.6) only verifies the styling hand-off.
-- Risks: none beyond the general `flutter_code_editor` maintenance signal already captured in `research.md`.
+- Risks: none beyond the general `highlight` package maintenance signal already captured in `research.md`.
 
 ### Presentation Layer
 
