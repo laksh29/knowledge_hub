@@ -37,12 +37,13 @@
   - _Boundary: packages/markdown_code_block_editor_
   - _Note: uses `package:highlight` directly (no `flutter_code_editor` dependency) — sanctioned in research.md as the "thin wrapper" alternative. `design.md`'s Technology Stack table still says "built on `flutter_code_editor`/`highlight`," which is now stale wording, not a code deviation._
 
-- [ ] 1.6 (P) Establish the app's typed design-system tokens and reusable presentation primitives
+- [x] 1.6 (P) Establish the app's typed design-system tokens and reusable presentation primitives
   - Create typed constant classes mirroring the design system's colors, typography, spacing, radius, and elevation values
   - Create reusable primary/secondary/tertiary-text/icon button components and the single shared text-field component, each accepting flow-specific behavior only via callback parameters
   - Observable: every color/typography/spacing/radius/elevation value used anywhere in this feature traces to one of these typed constants, with no literal value inlined in a widget
   - _Requirements: 2.1, 2.2_
   - _Boundary: core/design_system_
+  - _Note: token-class unit tests only (no widget-render tests), per the project's explicit no-widget-test policy for `core/design_system` primitives. `AppTextFieldWidget` needed one remediation round: label restructured to a stacked caption above the field (not `InputDecoration.labelText`'s floating pattern) with a new `hintText` param, and vertical padding tuned to hit `design.md`'s documented 56px height exactly._
 
 - [ ] 1.7 [USER-IMPLEMENT] Define the local database schema for notes, folders, tags, and full-text search
   - Define the notes, folders, tags, and note-tags tables plus the full-text-search index over note title and body, built using the WAL+FTS5 toolkit's opener and SQL builders
