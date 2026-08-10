@@ -52,6 +52,7 @@
   - _Requirements: 4.1, 4.2, 4.3, 5.1, 6.2, 6.3_
   - _Depends: 1.3_
   - _Boundary: notes_database_
+  - _USER-IMPLEMENT: stub ready — signature + design note + failing tests committed, awaiting your implementation. Files: `lib/features/notes/data/local/notes_database.dart` (Notes/Folders/Tags/NoteTags table shells with only `id` columns declared, `NotesDatabase.migration` throws `UnimplementedError`; full column lists and FK/cascade wiring documented in the file's design-note comment), `test/features/notes/data/local/notes_database_test.dart` (5 failing tests: schema round-trip, unfiled note, folder-delete unfiles notes, tag-delete removes only the association, FTS5 search finds an inserted note). Note: `dart run build_runner build` needs `--force-jit` in this environment — the default AOT build-script compilation fails against `sqlite3`'s native build hooks ("dart compile does not support build hooks")._
 
 - [ ] 2. Core: note-taking domain and data layer
 - [ ] 2.1 Define the note-taking domain model and supporting value objects
@@ -278,3 +279,7 @@
   - Observable: the same capture/search/organize sequence produces identical core behavior whether or not persona-specific affordances are exercised
   - _Requirements: 9.1, 9.2_
   - _Depends: 6.2, 6.3_
+
+## Implementation Notes
+
+- `dart run build_runner build` fails in this environment with "dart compile does not support build hooks, use 'dart build' instead" once `sqlite3`/`drift` are dependencies (they declare a native build hook for the sqlite3 native library) — always pass `--force-jit` (e.g. `dart run build_runner build --delete-conflicting-outputs --force-jit`) to skip the incompatible AOT build-script compilation path. Affects any task needing codegen (Drift, freezed, injectable) from this point on.
