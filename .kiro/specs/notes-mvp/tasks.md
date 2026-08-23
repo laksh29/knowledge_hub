@@ -63,7 +63,7 @@
   - _Requirements: 4.1, 4.2, 5.1, 5.3, 6.4, 7.1_
   - _Note: freezed 3.2.5 (the pinned version) requires entity classes to be declared `abstract class X with _$X`, not the plain `class X with _$X` shown in flutter-clean-architecture-guide.md §5.1's example — that snippet predates a freezed 3.x breaking change. All future freezed usage in this project should follow `abstract class`, not the guide's literal snippet._
 
-- [ ] 2.2 Define the notes, folders, and tags persistence contracts
+- [x] 2.2 Define the notes, folders, and tags persistence contracts
   - Define the abstract persistence contract for notes (create, save content, watch filtered/searched lists, move to/restore/permanently-delete-from trash, purge expired trash) and the equivalent contracts for folders and tags (create, watch list, delete)
   - Define the duplicate-name failure case as a distinct, explicit error type alongside the project's existing shared failure types
   - Observable: the contracts compile with fully explicit types on every parameter and return value, ready for a data-layer implementation to satisfy

@@ -18,3 +18,7 @@ final class NetworkFailure extends Failure {
 final class ValidationFailure extends Failure {
   const ValidationFailure(super.message);
 }
+
+final class DuplicateNameFailure extends Failure {
+  const DuplicateNameFailure(super.message);
+}
