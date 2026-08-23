@@ -86,12 +86,13 @@
   - _Boundary: FoldersLocalDataSourceImpl, FolderModel_
   - _Note: added `DuplicateNameException` alongside the existing `ServerException`/`CacheException`. One review round: the SELECT-then-INSERT duplicate-name precheck raced under concurrent calls (empirically proven), letting a UNIQUE-constraint `SqliteException` fall through as `CacheException` instead of `DuplicateNameException` — fixed by catching `extendedResultCode == 2067` (SQLITE_CONSTRAINT_UNIQUE) explicitly, ordered before the generic catch. This same precheck pattern will need the identical fix when task 2.5 (tags) is implemented._
 
-- [ ] 2.5 (P) Implement local data access and storage mapping for tags
+- [x] 2.5 (P) Implement local data access and storage mapping for tags
   - Implement the tags data-access implementation and its row-to-domain-object mapping in both directions, named as a "local" variant for the same future-extension reason as notes and folders
   - Observable: a passing test suite verifies a tag round-trips through storage unchanged and that creating a duplicate tag name surfaces the distinct duplicate-name error
   - _Requirements: 5.1_
   - _Depends: 1.7_
   - _Boundary: TagsLocalDataSourceImpl, TagModel_
+  - _Note: applied task 2.4's UNIQUE-constraint race fix proactively from the start — approved on the first review round with no rejection, including a fault-injection check confirming the concurrency test would actually catch the regression if the fix were removed._
 
 - [ ] 2.6 (P) [USER-IMPLEMENT] Implement the notes repository's persistence, search, and trash-lifecycle behavior
   - Implement the notes repository against its data-access dependency: content creation and saving, a live filtered/searched note stream that always applies a most-recently-modified-first default order, and the full trash lifecycle (move to trash without disturbing folder/tag assignment, restore, permanent delete as a real removal, and purging anything trashed more than 30 days ago)
