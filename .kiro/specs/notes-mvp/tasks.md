@@ -69,13 +69,14 @@
   - Observable: the contracts compile with fully explicit types on every parameter and return value, ready for a data-layer implementation to satisfy
   - _Requirements: 1.1, 1.2, 3.1, 3.2, 3.3, 3.4, 3.8, 4.4, 5.2, 5.4, 5.5, 6.1, 6.2, 6.3, 6.5, 7.1, 7.2, 7.3, 7.4, 10.1_
 
-- [ ] 2.3 (P) Implement local data access and storage mapping for notes
+- [x] 2.3 (P) Implement local data access and storage mapping for notes
   - Implement the notes data-access implementation against the local database schema, converting between stored rows and domain objects in both directions
   - Name the implementation as a "local" variant of the shared contract (not tied to the storage engine's name) so a future network-backed variant can implement the same contract without renaming this one
   - Observable: a passing test suite verifies a note round-trips through storage unchanged, and that a stored note's tag associations resolve correctly
   - _Requirements: 1.1, 1.2, 3.1, 3.2, 3.3, 3.4_
   - _Depends: 1.7_
   - _Boundary: NotesLocalDataSourceImpl, NoteModel_
+  - _Note: also created `lib/core/error/exception.dart` (ServerException/CacheException, per guide §4.3) as an unowned implicit prerequisite — no prior task created it and this is the first data-layer implementation task that needs it. `NotesDataSource`'s exact method shape isn't pinned in design.md (unlike the Repository contracts); designed here to satisfy this task's two Observables — `watchNotes` only supports folder + active/trash scoping, full AND/OR tag filtering is deferred to task 2.6. One review round: `saveNoteContent` initially leaked a raw `StateError` on a missing noteId instead of `CacheException` — fixed via `getSingleOrNull()` + explicit throw, with catch-clause ordering fixed so it isn't re-wrapped and message-mangled._
 
 - [ ] 2.4 (P) Implement local data access and storage mapping for folders
   - Implement the folders data-access implementation and its row-to-domain-object mapping in both directions, named as a "local" variant for the same future-extension reason as notes
