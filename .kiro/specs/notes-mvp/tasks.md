@@ -56,11 +56,12 @@
   - _USER-IMPLEMENT: stub ready — signature + design note + failing tests committed, awaiting your implementation. Files: `lib/features/notes/data/local/notes_database.dart` (Notes/Folders/Tags/NoteTags table shells with only `id` columns declared, `NotesDatabase.migration` throws `UnimplementedError`; full column lists and FK/cascade wiring documented in the file's design-note comment), `test/features/notes/data/local/notes_database_test.dart` (5 failing tests: schema round-trip, unfiled note, folder-delete unfiles notes, tag-delete removes only the association, FTS5 search finds an inserted note). Note: `dart run build_runner build` needs `--force-jit` in this environment — the default AOT build-script compilation fails against `sqlite3`'s native build hooks ("dart compile does not support build hooks")._
 
 - [ ] 2. Core: note-taking domain and data layer
-- [ ] 2.1 Define the note-taking domain model and supporting value objects
+- [x] 2.1 Define the note-taking domain model and supporting value objects
   - Define the note, folder, and tag business objects, the search-result representation carrying highlighted match snippets, and the filter parameters describing folder scope, tag selection with AND/OR mode, and active-versus-trash scope
   - Ensure a note's folder assignment and its trash status are represented as two fully independent optional values, never encoding one via the other
   - Observable: every field on every domain object has an explicit, concrete type with no dynamic or loosely-typed map anywhere
   - _Requirements: 4.1, 4.2, 5.1, 5.3, 6.4, 7.1_
+  - _Note: freezed 3.2.5 (the pinned version) requires entity classes to be declared `abstract class X with _$X`, not the plain `class X with _$X` shown in flutter-clean-architecture-guide.md §5.1's example — that snippet predates a freezed 3.x breaking change. All future freezed usage in this project should follow `abstract class`, not the guide's literal snippet._
 
 - [ ] 2.2 Define the notes, folders, and tags persistence contracts
   - Define the abstract persistence contract for notes (create, save content, watch filtered/searched lists, move to/restore/permanently-delete-from trash, purge expired trash) and the equivalent contracts for folders and tags (create, watch list, delete)
