@@ -1,4 +1,5 @@
 import 'package:knowledge_hub/features/notes/data/models/note_model.dart';
+import 'package:knowledge_hub/features/notes/data/models/note_search_result_model.dart';
 
 /// Abstract contract the notes data-access layer must satisfy. Narrower and
 /// lower-level than `NotesRepository`: it speaks in `NoteModel`s and plain
@@ -35,4 +36,16 @@ abstract class NotesDataSource {
   /// Permanently deletes every note whose `deletedAt` is strictly before
   /// [olderThan]. Returns the number of notes removed.
   Future<int> purgeExpiredTrash(DateTime olderThan);
+
+  /// USER-IMPLEMENT (notes-mvp task 2.6, added here as a flagged implicit
+  /// prerequisite — this signature didn't exist when task 2.3 designed this
+  /// contract, since 2.3's Observable didn't need search).
+  ///
+  /// A live, ranked, highlighted full-text-search stream over the `notes_fts`
+  /// index (built by `packages/sqlite_wal_fts_toolkit` in task 1.7),
+  /// re-emitting whenever a matching note changes. The real implementation
+  /// belongs in `NotesLocalDataSourceImpl` — it needs `bm25()`/`highlight()`
+  /// SQL against `notes_fts`, wired as a Drift custom-select stream (or
+  /// similar), not implemented here.
+  Stream<List<NoteSearchResultModel>> watchSearchResults(String query);
 }

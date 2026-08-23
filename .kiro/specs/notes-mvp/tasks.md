@@ -101,6 +101,7 @@
   - _Requirements: 1.1, 1.2, 3.1, 3.2, 3.3, 3.4, 3.8, 4.4, 5.2, 5.4, 5.5, 6.1, 6.2, 6.3, 6.4, 6.5, 7.1, 7.2, 7.3, 7.4, 10.1_
   - _Depends: 2.3_
   - _Boundary: NotesRepositoryImpl_
+  - _USER-IMPLEMENT: stub ready — signature + design note + failing tests committed, awaiting your implementation. Files: `lib/features/notes/data/repositories/notes_repository_impl.dart` (all 8 methods throw `UnimplementedError`, each with a per-method design note), `test/features/notes/data/repositories/notes_repository_impl_test.dart` (4 failing tests: restore-preserves-folder-and-tags, purge-boundary-exactness, createNote, plus a skipped placeholder for watchNotes' default-sort requirement), `test/features/notes/data/repositories/fakes/fake_notes_data_source.dart` (isolated in-memory Fake, no real SQLite). Also extended `NotesDataSource`/`NotesLocalDataSourceImpl` (already-approved, task 2.3) with a `watchSearchResults` signature — flagged implicit prerequisite, since 2.3's Observable never required search and this task's `watchSearchResults` has nothing to call without it. Fully implemented `NoteSearchResultModel` (mechanical mapping, not the hard part)._
 
 - [ ] 2.7 (P) Implement the folders repository's persistence and unfiling behavior
   - Implement the folders repository against its data-access dependency, including the rule that deleting a folder unfiles its member notes rather than deleting them

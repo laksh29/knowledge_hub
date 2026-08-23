@@ -3,6 +3,7 @@ import 'package:knowledge_hub/core/error/exception.dart';
 import 'package:knowledge_hub/features/notes/data/datasources/notes_data_source.dart';
 import 'package:knowledge_hub/features/notes/data/local/notes_database.dart';
 import 'package:knowledge_hub/features/notes/data/models/note_model.dart';
+import 'package:knowledge_hub/features/notes/data/models/note_search_result_model.dart';
 
 /// Drift-backed implementation of [NotesDataSource]. Named "Local" (not
 /// "Drift") per the guide's §6.2 convention so a future
@@ -121,6 +122,21 @@ class NotesLocalDataSourceImpl implements NotesDataSource {
     } on Exception catch (e) {
       throw CacheException(e.toString());
     }
+  }
+
+  /// USER-IMPLEMENT stub — design note, not a working implementation.
+  ///
+  /// Needs a Drift custom-select against `notes_fts` using `bm25()` for
+  /// ranking and `highlight()` for the two snippet strings, joined back to
+  /// `notes` for the full row, watched as a Stream so results update live.
+  /// See `packages/sqlite_wal_fts_toolkit`'s own tests (task 1.3) for the
+  /// `MATCH`/`highlight()` query shape this needs to build on.
+  @override
+  Stream<List<NoteSearchResultModel>> watchSearchResults(String query) {
+    throw UnimplementedError(
+      'NotesLocalDataSourceImpl.watchSearchResults is a USER-IMPLEMENT stub '
+      '— see notes-mvp tasks.md task 2.6.',
+    );
   }
 
   Future<Note> _selectNoteById(String noteId) async {
