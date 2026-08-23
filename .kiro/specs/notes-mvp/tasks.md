@@ -78,12 +78,13 @@
   - _Boundary: NotesLocalDataSourceImpl, NoteModel_
   - _Note: also created `lib/core/error/exception.dart` (ServerException/CacheException, per guide §4.3) as an unowned implicit prerequisite — no prior task created it and this is the first data-layer implementation task that needs it. `NotesDataSource`'s exact method shape isn't pinned in design.md (unlike the Repository contracts); designed here to satisfy this task's two Observables — `watchNotes` only supports folder + active/trash scoping, full AND/OR tag filtering is deferred to task 2.6. One review round: `saveNoteContent` initially leaked a raw `StateError` on a missing noteId instead of `CacheException` — fixed via `getSingleOrNull()` + explicit throw, with catch-clause ordering fixed so it isn't re-wrapped and message-mangled._
 
-- [ ] 2.4 (P) Implement local data access and storage mapping for folders
+- [x] 2.4 (P) Implement local data access and storage mapping for folders
   - Implement the folders data-access implementation and its row-to-domain-object mapping in both directions, named as a "local" variant for the same future-extension reason as notes
   - Observable: a passing test suite verifies a folder round-trips through storage unchanged and that creating a duplicate folder name surfaces the distinct duplicate-name error
   - _Requirements: 4.1, 4.2, 4.3_
   - _Depends: 1.7_
   - _Boundary: FoldersLocalDataSourceImpl, FolderModel_
+  - _Note: added `DuplicateNameException` alongside the existing `ServerException`/`CacheException`. One review round: the SELECT-then-INSERT duplicate-name precheck raced under concurrent calls (empirically proven), letting a UNIQUE-constraint `SqliteException` fall through as `CacheException` instead of `DuplicateNameException` — fixed by catching `extendedResultCode == 2067` (SQLITE_CONSTRAINT_UNIQUE) explicitly, ordered before the generic catch. This same precheck pattern will need the identical fix when task 2.5 (tags) is implemented._
 
 - [ ] 2.5 (P) Implement local data access and storage mapping for tags
   - Implement the tags data-access implementation and its row-to-domain-object mapping in both directions, named as a "local" variant for the same future-extension reason as notes and folders
