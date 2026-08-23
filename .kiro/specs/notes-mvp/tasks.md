@@ -45,13 +45,14 @@
   - _Boundary: core/design_system_
   - _Note: token-class unit tests only (no widget-render tests), per the project's explicit no-widget-test policy for `core/design_system` primitives. `AppTextFieldWidget` needed one remediation round: label restructured to a stacked caption above the field (not `InputDecoration.labelText`'s floating pattern) with a new `hintText` param, and vertical padding tuned to hit `design.md`'s documented 56px height exactly._
 
-- [ ] 1.7 [USER-IMPLEMENT] Define the local database schema for notes, folders, tags, and full-text search
+- [x] 1.7 [USER-IMPLEMENT] Define the local database schema for notes, folders, tags, and full-text search
   - Define the notes, folders, tags, and note-tags tables plus the full-text-search index over note title and body, built using the WAL+FTS5 toolkit's opener and SQL builders
   - Configure referential integrity so deleting a folder unfiles its notes and deleting a tag removes only its associations, never the notes themselves
   - Observable: a passing test suite verifies the schema creates successfully, the full-text index stays in sync after inserts/updates/deletes, and both cascade rules behave as specified
   - _Requirements: 4.1, 4.2, 4.3, 5.1, 6.2, 6.3_
   - _Depends: 1.3_
   - _Boundary: notes_database_
+  - _USER-IMPLEMENT: implemented and reviewer-approved. `PRAGMA foreign_keys = ON;` set in `beforeOpen` (not `onCreate`) so it re-applies on every connection open, not just first creation — verified against drift's source. FTS5 hidden-rowid mapping (TEXT id, not INTEGER) independently confirmed correct via a round-trip._
   - _USER-IMPLEMENT: stub ready — signature + design note + failing tests committed, awaiting your implementation. Files: `lib/features/notes/data/local/notes_database.dart` (Notes/Folders/Tags/NoteTags table shells with only `id` columns declared, `NotesDatabase.migration` throws `UnimplementedError`; full column lists and FK/cascade wiring documented in the file's design-note comment), `test/features/notes/data/local/notes_database_test.dart` (5 failing tests: schema round-trip, unfiled note, folder-delete unfiles notes, tag-delete removes only the association, FTS5 search finds an inserted note). Note: `dart run build_runner build` needs `--force-jit` in this environment — the default AOT build-script compilation fails against `sqlite3`'s native build hooks ("dart compile does not support build hooks")._
 
 - [ ] 2. Core: note-taking domain and data layer
