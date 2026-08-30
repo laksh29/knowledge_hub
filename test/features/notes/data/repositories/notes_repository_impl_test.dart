@@ -49,7 +49,11 @@ void main() {
 
   group('purgeExpiredTrash (USER-IMPLEMENT)', () {
     test('purges only notes trashed more than 30 days ago, at the exact boundary', () async {
-      final DateTime now = DateTime.utc(2026, 3, 1);
+      // Uses the real clock (not a fixed date) since NotesRepositoryImpl's
+      // purgeExpiredTrash() computes its cutoff from the real DateTime.now()
+      // — the NotesRepository contract takes no parameters, so there is no
+      // way to inject a fake clock here.
+      final DateTime now = DateTime.now();
 
       final NoteModel justOverThreshold = NoteModel(
         id: 'note-old',

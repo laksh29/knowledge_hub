@@ -1,10 +1,15 @@
+import 'dart:developer';
+
+import 'package:knowledge_hub/core/error/exception.dart';
 import 'package:knowledge_hub/core/error/failure.dart';
 import 'package:knowledge_hub/core/error/result.dart';
 import 'package:knowledge_hub/features/notes/data/datasources/notes_data_source.dart';
+import 'package:knowledge_hub/features/notes/data/models/note_model.dart';
 import 'package:knowledge_hub/features/notes/domain/entities/note.dart';
 import 'package:knowledge_hub/features/notes/domain/entities/note_list_filter.dart';
 import 'package:knowledge_hub/features/notes/domain/entities/note_search_result.dart';
 import 'package:knowledge_hub/features/notes/domain/repositories/notes_repository.dart';
+import 'package:uuid/uuid.dart';
 
 /// **USER-IMPLEMENT stub — design note, not a working implementation.**
 ///
@@ -44,11 +49,30 @@ class NotesRepositoryImpl implements NotesRepository {
   /// call `_dataSource.createNote(...)`, and convert the result to a `Note`
   /// entity (with `tagIds: const []`, since a brand-new note has none yet).
   @override
-  Future<Result<Failure, Note>> createNote() {
-    throw UnimplementedError(
-      'NotesRepositoryImpl.createNote is a USER-IMPLEMENT stub — see '
-      'notes-mvp tasks.md task 2.6.',
-    );
+  Future<Result<Failure, Note>> createNote() async {
+    final String uid = const Uuid().v4();
+
+    try {
+      final NoteModel createNote = await _dataSource.createNote(
+        NoteModel(
+          id: uid,
+          title: "",
+          body: "",
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      final Note note = createNote.toEntity(tagIds: []);
+
+      return Ok(note);
+    } on CacheException catch (e, stackTrace) {
+      log('createNote failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+      return Err(CacheFailure(e.message ?? 'No cached data available'));
+    } on ServerException catch (e, stackTrace) {
+      log('createNote failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+      return Err(ServerFailure(e.message ?? 'Server error'));
+    }
   }
 
   /// USER-IMPLEMENT: straightforward passthrough to
@@ -58,11 +82,26 @@ class NotesRepositoryImpl implements NotesRepository {
   /// DataSource's `saveNoteContent` only touches title/body/updatedAt, it
   /// has no concept of tags).
   @override
-  Future<Result<Failure, Note>> saveNoteContent(SaveNoteContentParams params) {
-    throw UnimplementedError(
-      'NotesRepositoryImpl.saveNoteContent is a USER-IMPLEMENT stub — see '
-      'notes-mvp tasks.md task 2.6.',
-    );
+  Future<Result<Failure, Note>> saveNoteContent(SaveNoteContentParams params) async {
+    try {
+      final NoteModel savedNote = await _dataSource.saveNoteContent(
+        noteId: params.noteId,
+        title: params.title,
+        body: params.body,
+        updatedAt: DateTime.now(),
+      );
+      final List<String> tagIds = await _dataSource.getNoteTagIds(params.noteId);
+
+      final Note note = savedNote.toEntity(tagIds: tagIds);
+
+      return Ok(note);
+    } on CacheException catch (e, stackTrace) {
+      log('saveNoteContent failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+      return Err(CacheFailure(e.message ?? 'No cached data available'));
+    } on ServerException catch (e, stackTrace) {
+      log('saveNoteContent failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+      return Err(ServerFailure(e.message ?? 'Server error'));
+    }
   }
 
   /// USER-IMPLEMENT: the trickiest method here. `_dataSource.watchNotes`
@@ -86,10 +125,60 @@ class NotesRepositoryImpl implements NotesRepository {
   ///    emit `Err(CacheFailure(...))` rather than letting the stream throw.
   @override
   Stream<Result<Failure, List<Note>>> watchNotes(NoteListFilterParams filter) {
-    throw UnimplementedError(
-      'NotesRepositoryImpl.watchNotes is a USER-IMPLEMENT stub — see '
-      'notes-mvp tasks.md task 2.6.',
-    );
+    return _dataSource
+        .watchNotes(
+          folderId: filter.folderId,
+          activeOnly: filter.lifecycleScope == NoteLifecycleScope.active,
+        )
+        .asyncMap((List<NoteModel> noteModels) async {
+          try {
+            final List<Note?> filteredNotes = await Future.wait<Note?>(
+              List.generate(noteModels.length, (i) async {
+                final List<String> noteTagIds = await _dataSource.getNoteTagIds(noteModels[i].id);
+
+                final List<String> filterTagIds = filter.tagIds;
+                final TagFilterMode filterType = filter.tagFilterMode;
+
+                // An empty filter means "no tag filter applied" -- every
+                // note matches, regardless of mode. Without this check,
+                // `any`/`every` over an empty filterTagIds list would
+                // otherwise reject every note (the default, most common
+                // case: the user hasn't selected any tags to filter by).
+                bool matches = true;
+                if (filterTagIds.isNotEmpty) {
+                  switch (filterType) {
+                    case TagFilterMode.anyOf:
+                      matches = filterTagIds.any(noteTagIds.contains);
+                    case TagFilterMode.allOf:
+                      // "containing all of the selected tags" (5.5) means
+                      // filterTagIds is a subset of the note's tags -- not
+                      // the other way around. Iterate over filterTagIds so
+                      // a note with extra tags beyond the filter still
+                      // matches, as long as it has every selected tag.
+                      matches = filterTagIds.every(noteTagIds.contains);
+                  }
+                }
+
+                if (matches) {
+                  return noteModels[i].toEntity(tagIds: noteTagIds);
+                }
+                return null;
+              }),
+            );
+
+            final List<Note> notes = filteredNotes.nonNulls.toList();
+
+            notes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+            return Ok(notes);
+          } on CacheException catch (e, stackTrace) {
+            log('watchNotes failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+            return Err(CacheFailure(e.message ?? 'No cached data available'));
+          } on ServerException catch (e, stackTrace) {
+            log('watchNotes failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+            return Err(ServerFailure(e.message ?? 'Server error'));
+          }
+        });
   }
 
   /// USER-IMPLEMENT: calls `_dataSource.watchSearchResults(query)` (itself
@@ -102,10 +191,28 @@ class NotesRepositoryImpl implements NotesRepository {
   /// documented precondition on this method.
   @override
   Stream<Result<Failure, List<NoteSearchResult>>> watchSearchResults(String query) {
-    throw UnimplementedError(
-      'NotesRepositoryImpl.watchSearchResults is a USER-IMPLEMENT stub — '
-      'see notes-mvp tasks.md task 2.6.',
-    );
+    return _dataSource.watchSearchResults(query).asyncMap((result) async {
+      try {
+        final List<NoteSearchResult> searchResult = await Future.wait(
+          result.map((note) async {
+            final List<String> tagIds = await _dataSource.getNoteTagIds(note.note.id);
+            return NoteSearchResult(
+              note: note.note.toEntity(tagIds: tagIds),
+              highlightedTitleSnippet: note.highlightedTitleSnippet,
+              highlightedBodySnippet: note.highlightedBodySnippet,
+            );
+          }),
+        );
+
+        return Ok(searchResult);
+      } on CacheException catch (e, stackTrace) {
+        log('watchSearchResults failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+        return Err(CacheFailure(e.message ?? 'No cached data available'));
+      } on ServerException catch (e, stackTrace) {
+        log('watchSearchResults failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+        return Err(ServerFailure(e.message ?? 'Server error'));
+      }
+    });
   }
 
   /// USER-IMPLEMENT: passthrough to `_dataSource.moveNoteToTrash(noteId)`.
@@ -113,11 +220,18 @@ class NotesRepositoryImpl implements NotesRepository {
   /// `folderId` — and it won't, as long as this stays a pure passthrough
   /// rather than re-implementing the trash logic here.
   @override
-  Future<Result<Failure, void>> moveNoteToTrash(String noteId) {
-    throw UnimplementedError(
-      'NotesRepositoryImpl.moveNoteToTrash is a USER-IMPLEMENT stub — see '
-      'notes-mvp tasks.md task 2.6.',
-    );
+  Future<Result<Failure, void>> moveNoteToTrash(String noteId) async {
+    try {
+      final void moveToTrash = await _dataSource.moveNoteToTrash(noteId);
+
+      return Ok(moveToTrash);
+    } on CacheException catch (e, stackTrace) {
+      log('moveNoteToTrash failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+      return Err(CacheFailure(e.message ?? 'No cached data available'));
+    } on ServerException catch (e, stackTrace) {
+      log('moveNoteToTrash failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+      return Err(ServerFailure(e.message ?? 'Server error'));
+    }
   }
 
   /// USER-IMPLEMENT: passthrough to
@@ -126,11 +240,18 @@ class NotesRepositoryImpl implements NotesRepository {
   /// state *unchanged*, which is guaranteed for free as long as this only
   /// clears `deletedAt` and never touches `folderId` or the tag join table.
   @override
-  Future<Result<Failure, void>> restoreNoteFromTrash(String noteId) {
-    throw UnimplementedError(
-      'NotesRepositoryImpl.restoreNoteFromTrash is a USER-IMPLEMENT stub — '
-      'see notes-mvp tasks.md task 2.6.',
-    );
+  Future<Result<Failure, void>> restoreNoteFromTrash(String noteId) async {
+    try {
+      final void restoreFromTrash = await _dataSource.restoreNoteFromTrash(noteId);
+
+      return Ok(restoreFromTrash);
+    } on CacheException catch (e, stackTrace) {
+      log('restoreNoteFromTrash failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+      return Err(CacheFailure(e.message ?? 'No cached data available'));
+    } on ServerException catch (e, stackTrace) {
+      log('restoreNoteFromTrash failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+      return Err(ServerFailure(e.message ?? 'Server error'));
+    }
   }
 
   /// USER-IMPLEMENT: passthrough to
@@ -139,11 +260,18 @@ class NotesRepositoryImpl implements NotesRepository {
   /// "permanently deleted" value of `deletedAt`, so once this succeeds the
   /// note simply no longer exists to be queried.
   @override
-  Future<Result<Failure, void>> permanentlyDeleteNote(String noteId) {
-    throw UnimplementedError(
-      'NotesRepositoryImpl.permanentlyDeleteNote is a USER-IMPLEMENT stub '
-      '— see notes-mvp tasks.md task 2.6.',
-    );
+  Future<Result<Failure, void>> permanentlyDeleteNote(String noteId) async {
+    try {
+      final void permanentlyDete = await _dataSource.permanentlyDeleteNote(noteId);
+
+      return Ok(permanentlyDete);
+    } on CacheException catch (e, stackTrace) {
+      log('permanentlyDeleteNote failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+      return Err(CacheFailure(e.message ?? 'No cached data available'));
+    } on ServerException catch (e, stackTrace) {
+      log('permanentlyDeleteNote failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+      return Err(ServerFailure(e.message ?? 'Server error'));
+    }
   }
 
   /// USER-IMPLEMENT: this repository owns the 30-day trash-retention
@@ -153,10 +281,18 @@ class NotesRepositoryImpl implements NotesRepository {
   /// 30))` and call `_dataSource.purgeExpiredTrash(olderThan)`, returning
   /// the count it reports.
   @override
-  Future<Result<Failure, int>> purgeExpiredTrash() {
-    throw UnimplementedError(
-      'NotesRepositoryImpl.purgeExpiredTrash is a USER-IMPLEMENT stub — see '
-      'notes-mvp tasks.md task 2.6.',
-    );
+  Future<Result<Failure, int>> purgeExpiredTrash() async {
+    try {
+      final DateTime expiryDuration = DateTime.now().subtract(const Duration(days: 30));
+      final int purgeExpiredTrash = await _dataSource.purgeExpiredTrash(expiryDuration);
+
+      return Ok(purgeExpiredTrash);
+    } on CacheException catch (e, stackTrace) {
+      log('purgeExpiredTrash failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+      return Err(CacheFailure(e.message ?? 'No cached data available'));
+    } on ServerException catch (e, stackTrace) {
+      log('purgeExpiredTrash failed', error: e, stackTrace: stackTrace, name: 'notes.repository');
+      return Err(ServerFailure(e.message ?? 'Server error'));
+    }
   }
 }
