@@ -128,12 +128,13 @@
   - _Boundary: CreateNoteUc, SaveNoteContentUc_
   - _Note:_ Both are trivial passthroughs over `NotesRepository.createNote()`/`.saveNoteContent(params)` — no added logic. First use cases in this feature, so `mocktail` (guide §8.2's mandatory interaction-verification tool, absent from the project until now) was added as a dev dependency in a preceding commit, since a stateful `Fake` repository (the existing pattern for repository-contract tests) can't express "called exactly once with exactly these params." Tests assert exact param forwarding, untouched `Ok(...)` passthrough, and untouched `Err(...)` propagation via `verify(...).called(1)` + `verifyNoMoreInteractions(...)`.
 
-- [ ] 3.2 (P) Implement the reactive filtered-and-searchable note-list use cases
+- [x] 3.2 (P) Implement the reactive filtered-and-searchable note-list use cases
   - Implement the use case that watches a live note list filtered by folder and/or tags (with an AND/OR toggle) and scoped to active or trashed notes, and the use case that watches live, ranked, highlighted full-text search results
   - Observable: a passing test suite verifies AND-mode returns only notes carrying every selected tag while OR-mode returns notes carrying any selected tag, using the same underlying use case with different parameters
   - _Requirements: 4.4, 5.2, 5.4, 5.5, 6.1, 6.2, 6.3, 6.4, 6.5, 10.1_
   - _Depends: 2.6_
   - _Boundary: WatchFilteredNotesUc, WatchNoteSearchResultsUc_
+  - _Note:_ Both are trivial reactive passthroughs (`StreamUseCase`) over `NotesRepository.watchNotes(filter)`/`.watchSearchResults(query)` — zero tag-matching logic in the use-case layer, that stays owned by `NotesRepositoryImpl` (task 2.6). The AND/OR Observable is satisfied via mock-forwarding: the same use-case instance is called with `tagFilterMode: allOf` vs `anyOf` params, and a mocked repository returns different canned streams per params value, proving correct parameterized passthrough — not reimplemented filtering. **Reviewer escalation (out of this task's boundary, tracked separately):** design.md:786 mandates a real AND/OR tag-filter-correctness regression test against `NotesRepositoryImpl.watchNotes()`; none exists — `notes_repository_impl_test.dart`'s `watchNotes` group is still the `skip:`-marked placeholder from task 2.6, and the adversarial probes that found/fixed the empty-filter and reversed-`allOf`-direction bugs during 2.6's review were never persisted as regression tests. Needs a follow-up task against task 2.6's boundary.
 
 - [ ] 3.3 (P) Implement the trash lifecycle use cases
   - Implement the use cases for moving a note to trash, restoring it, permanently deleting it directly from trash, and purging everything past the retention window
