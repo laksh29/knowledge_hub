@@ -176,6 +176,7 @@
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
   - _Depends: 3.1_
   - _Boundary: NoteEditorBloc_
+  - _Note:_ Stub prepared, awaiting user implementation. `note_editor_event.dart` (5 events)/`note_editor_state.dart` (5 sealed states, matching design.md exactly)/`note_editor_view_model.dart` are fully written scaffolding. `note_editor_bloc.dart`'s constructor and event registrations are wired, but all 5 handler bodies `throw UnimplementedError` — the real orchestration (debounce+restartable transformer composition, char-count-threshold bypass, lifecycle-triggered/manual immediate-save paths, all converging on one `_save(...)` write path, failure handling preserving the in-memory draft) is left for the user, with a design note on the class documenting the approach without solving it. 2 tests in `note_editor_bloc_test.dart` currently fail against the stub (confirmed RED). Also fixed: `bloc_test` cannot be installed on this project's current toolchain (see design.md's 2026-08-30 tooling correction) — Bloc/Cubit tests for this and all remaining presentation-layer tasks use plain `flutter_test` (`expectLater`/`emitsInOrder`) instead.
 
 - [ ] 4.3 (P) Implement the search experience's debounced, gated result stream
   - Implement the search orchestration that only queries once the input reaches at least 3 characters and has been idle for 300ms, exposing a distinct no-results state separate from the loading/results states
