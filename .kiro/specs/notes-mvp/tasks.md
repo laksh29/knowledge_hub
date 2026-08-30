@@ -144,12 +144,13 @@
   - _Boundary: MoveNoteToTrashUc, RestoreNoteFromTrashUc, PermanentlyDeleteNoteUc, PurgeExpiredTrashUc_
   - _Note:_ Four trivial passthroughs over `NotesRepository`'s trash methods; `PurgeExpiredTrashUc` deliberately contains no 30-day boundary logic (owned by `NotesRepositoryImpl`, task 2.6). Removed-count Observable tested with a real value assertion (`Ok(5)` → `.value == 5`), not just a type check.
 
-- [ ] 3.4 (P) Implement folder management use cases
+- [x] 3.4 (P) Implement folder management use cases
   - Implement the use cases to create a folder, watch the live folder list, and delete a folder
   - Observable: a passing test suite verifies each use case forwards to the repository unchanged and propagates a duplicate-name failure untouched
   - _Requirements: 4.1, 4.2, 4.3_
   - _Depends: 2.7_
   - _Boundary: CreateFolderUc, WatchFoldersUc, DeleteFolderUc_
+  - _Note:_ Three trivial passthroughs over `FoldersRepository`; `DeleteFolderUc` contains no unfiling-cascade logic (DB-owned, task 2.7). Duplicate-name-failure propagation tested with real type/message/identity assertions, not just `isA<Err>()`.
 
 - [ ] 3.5 (P) Implement tag management use cases
   - Implement the use cases to create a tag, watch the live tag list, and delete a tag
