@@ -152,12 +152,13 @@
   - _Boundary: CreateFolderUc, WatchFoldersUc, DeleteFolderUc_
   - _Note:_ Three trivial passthroughs over `FoldersRepository`; `DeleteFolderUc` contains no unfiling-cascade logic (DB-owned, task 2.7). Duplicate-name-failure propagation tested with real type/message/identity assertions, not just `isA<Err>()`.
 
-- [ ] 3.5 (P) Implement tag management use cases
+- [x] 3.5 (P) Implement tag management use cases
   - Implement the use cases to create a tag, watch the live tag list, and delete a tag
   - Observable: a passing test suite verifies each use case forwards to the repository unchanged and propagates a duplicate-name failure untouched
   - _Requirements: 5.1_
   - _Depends: 2.8_
   - _Boundary: CreateTagUc, WatchTagsUc, DeleteTagUc_
+  - _Note:_ Three trivial passthroughs over `TagsRepository`, mirroring 3.4's folder use cases exactly. `DeleteTagUc` contains no join-table/cascade logic (DB-owned, task 2.8). Completes all of group 3 (use cases) — every use case in the feature is now a reviewer-verified pure passthrough over its repository, with zero business logic duplicated outside the already-approved repository layer.
 
 - [ ] 4. Core: presentation foundations
 - [ ] 4.1 Implement shared human-readable error messaging for the note-taking feature
