@@ -120,12 +120,13 @@
   - _Note:_ `TagsRepositoryImpl` mirrors 2.7's `FoldersRepositoryImpl` shape exactly: `createTag` converts `TagModel`→`Tag` and maps `DuplicateNameException`→`Err(DuplicateNameFailure)`; `deleteTag` is a pure passthrough — the join-row cascade (`NoteTags` `ON DELETE CASCADE`, never touching `Notes`) is DB-owned and proven at 1.7/2.5; `watchTags` uses `StreamTransformer.fromHandlers` to convert stream-level `CacheException`/`ServerException` into `Err(...)` data events. Closes the gap flagged at 2.7's approval: added a permanent checked-in test for a genuine async `StreamController.addError()` stream error (not just a synchronous throw), which the reviewer confirmed is real and non-tautological via mutation testing (breaking the `CacheException` branch made the new test fail). Approved with one pre-existing, non-blocking, cross-cutting follow-up carried over from 2.7: no permanent test yet for the `StreamTransformer`'s unrecognized-exception fallback branch on either folders or tags.
 
 - [ ] 3. Core: note lifecycle use cases
-- [ ] 3.1 (P) Implement note creation and content-save use cases
+- [x] 3.1 (P) Implement note creation and content-save use cases
   - Implement the use case that creates a new empty note and the use case that persists in-progress title/body content to an existing note
   - Observable: a passing test suite verifies each use case forwards its parameters to the repository unchanged and propagates a failure untouched
   - _Requirements: 1.1, 1.2, 3.1, 3.2, 3.3, 3.4, 3.8_
   - _Depends: 2.6_
   - _Boundary: CreateNoteUc, SaveNoteContentUc_
+  - _Note:_ Both are trivial passthroughs over `NotesRepository.createNote()`/`.saveNoteContent(params)` — no added logic. First use cases in this feature, so `mocktail` (guide §8.2's mandatory interaction-verification tool, absent from the project until now) was added as a dev dependency in a preceding commit, since a stateful `Fake` repository (the existing pattern for repository-contract tests) can't express "called exactly once with exactly these params." Tests assert exact param forwarding, untouched `Ok(...)` passthrough, and untouched `Err(...)` propagation via `verify(...).called(1)` + `verifyNoMoreInteractions(...)`.
 
 - [ ] 3.2 (P) Implement the reactive filtered-and-searchable note-list use cases
   - Implement the use case that watches a live note list filtered by folder and/or tags (with an AND/OR toggle) and scoped to active or trashed notes, and the use case that watches live, ranked, highlighted full-text search results
