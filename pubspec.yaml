@@ -50,6 +50,7 @@ dependencies:
     path: packages/markdown_code_block_editor
   app_lifecycle_service:
     path: packages/app_lifecycle_service
+  stream_transform: ^2.1.2
 
 dev_dependencies:
   flutter_test:
