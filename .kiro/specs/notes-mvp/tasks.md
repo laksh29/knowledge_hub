@@ -136,12 +136,13 @@
   - _Boundary: WatchFilteredNotesUc, WatchNoteSearchResultsUc_
   - _Note:_ Both are trivial reactive passthroughs (`StreamUseCase`) over `NotesRepository.watchNotes(filter)`/`.watchSearchResults(query)` — zero tag-matching logic in the use-case layer, that stays owned by `NotesRepositoryImpl` (task 2.6). The AND/OR Observable is satisfied via mock-forwarding: the same use-case instance is called with `tagFilterMode: allOf` vs `anyOf` params, and a mocked repository returns different canned streams per params value, proving correct parameterized passthrough — not reimplemented filtering. **Reviewer escalation (out of this task's boundary, tracked separately):** design.md:786 mandates a real AND/OR tag-filter-correctness regression test against `NotesRepositoryImpl.watchNotes()`; none exists — `notes_repository_impl_test.dart`'s `watchNotes` group is still the `skip:`-marked placeholder from task 2.6, and the adversarial probes that found/fixed the empty-filter and reversed-`allOf`-direction bugs during 2.6's review were never persisted as regression tests. Needs a follow-up task against task 2.6's boundary.
 
-- [ ] 3.3 (P) Implement the trash lifecycle use cases
+- [x] 3.3 (P) Implement the trash lifecycle use cases
   - Implement the use cases for moving a note to trash, restoring it, permanently deleting it directly from trash, and purging everything past the retention window
   - Observable: a passing test suite verifies each use case forwards to the repository unchanged and that the purge use case reports how many notes it removed
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
   - _Depends: 2.6_
   - _Boundary: MoveNoteToTrashUc, RestoreNoteFromTrashUc, PermanentlyDeleteNoteUc, PurgeExpiredTrashUc_
+  - _Note:_ Four trivial passthroughs over `NotesRepository`'s trash methods; `PurgeExpiredTrashUc` deliberately contains no 30-day boundary logic (owned by `NotesRepositoryImpl`, task 2.6). Removed-count Observable tested with a real value assertion (`Ok(5)` → `.value == 5`), not just a type check.
 
 - [ ] 3.4 (P) Implement folder management use cases
   - Implement the use cases to create a folder, watch the live folder list, and delete a folder
