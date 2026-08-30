@@ -161,12 +161,13 @@
   - _Note:_ Three trivial passthroughs over `TagsRepository`, mirroring 3.4's folder use cases exactly. `DeleteTagUc` contains no join-table/cascade logic (DB-owned, task 2.8). Completes all of group 3 (use cases) — every use case in the feature is now a reviewer-verified pure passthrough over its repository, with zero business logic duplicated outside the already-approved repository layer.
 
 - [ ] 4. Core: presentation foundations
-- [ ] 4.1 Implement shared human-readable error messaging for the note-taking feature
+- [x] 4.1 Implement shared human-readable error messaging for the note-taking feature
   - Implement one function that exhaustively converts every known failure type into a specific, actionable, user-facing message (never a generic fallback), covering the storage-failure, duplicate-name, and not-found cases distinctly
   - Ensure every place that catches a storage exception logs the original exception and stack trace for developer diagnosis before converting it to a failure
   - Observable: a passing test suite verifies one specific message per failure type, including that a duplicate-name message names the exact folder/tag name that was attempted
-  - _Requirements: 3.1, 3.2, 3.3, 3.4_
+  - _Requirements: 3.1, 3.2, 3.3, 3.4_ (note: this citation is a pre-existing tasks.md authoring bug — Requirement 3 is Autosave, unrelated to error messaging; flagged during review, not corrected here since fixing it is out of this task's scope)
   - _Depends: 2.6, 2.7, 2.8_
+  - _Note:_ `mapFailureToMessage(Failure)` in `lib/features/notes/presentation/` exhaustively switches over all 5 sealed `Failure` subtypes. Per an explicit user decision, the not-found case is distinguished from a genuine storage failure via case-insensitive message-content matching on `CacheFailure.message` (not a new `NotFoundFailure` type) — deliberately avoids reopening the already-approved `NotesRepositoryImpl`/`FoldersRepositoryImpl`/`TagsRepositoryImpl`. `DuplicateNameFailure` messages are reparsed into the design.md template with the attempted name preserved. `ServerFailure`/`NetworkFailure` route through design.md's documented "any other/future Failure subtype" catchall message verbatim (both are currently unreachable in this offline-only v1 feature) — first review round rejected an initial version that invented undocumented bespoke copy for these two instead; fixed by routing through the exact catchall string and re-approved. Audited all ~30 catch sites across the 3 repository implementations for the log-before-convert requirement: already compliant, no changes needed.
 
 - [ ] 4.2 (P) [USER-IMPLEMENT] Implement the note editor's autosave state machine and its four save triggers
   - Implement the note-editing orchestration exposing a distinct state for each save-status scenario (not-saved, saving, saved, save-failed) rather than one state carrying a status flag, driven by four independent triggers: idle-based debounce, character-count threshold, app-lifecycle transition, and an explicit manual action
