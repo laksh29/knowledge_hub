@@ -178,12 +178,13 @@
   - _Boundary: NoteEditorBloc_
   - _Note:_ Stub prepared, awaiting user implementation. `note_editor_event.dart` (5 events)/`note_editor_state.dart` (5 sealed states, matching design.md exactly)/`note_editor_view_model.dart` are fully written scaffolding. `note_editor_bloc.dart`'s constructor and event registrations are wired, but all 5 handler bodies `throw UnimplementedError` — the real orchestration (debounce+restartable transformer composition, char-count-threshold bypass, lifecycle-triggered/manual immediate-save paths, all converging on one `_save(...)` write path, failure handling preserving the in-memory draft) is left for the user, with a design note on the class documenting the approach without solving it. 2 tests in `note_editor_bloc_test.dart` currently fail against the stub (confirmed RED). Also fixed: `bloc_test` cannot be installed on this project's current toolchain (see design.md's 2026-08-30 tooling correction) — Bloc/Cubit tests for this and all remaining presentation-layer tasks use plain `flutter_test` (`expectLater`/`emitsInOrder`) instead.
 
-- [ ] 4.3 (P) Implement the search experience's debounced, gated result stream
+- [x] 4.3 (P) Implement the search experience's debounced, gated result stream
   - Implement the search orchestration that only queries once the input reaches at least 3 characters and has been idle for 300ms, exposing a distinct no-results state separate from the loading/results states
   - Observable: a passing test suite verifies no query fires below the character threshold or before the idle debounce settles, and that a query matching nothing produces the distinct no-results state
   - _Requirements: 6.1, 6.5_
   - _Depends: 3.2_
   - _Boundary: SearchBloc_
+  - _Note:_ `SearchBloc` composes `stream_transform`'s `.debounce(300ms)` with `bloc_concurrency`'s `restartable()` (promoted `stream_transform` to a direct dependency) — genuinely idle-settling, empirically proven via manually-timed probes during review, not just cancellation-on-new-event. 5-state model per design.md plus a disclosed, reviewer-approved `SearchState.searchFailed` addition (design.md amended). The below-3-char reset path also rides the same debounce (bounded stale-state window, not indefinite) — a documented, accepted trade-off over adding a second un-debounced handler. `NoteSearchResultViewModel` added with no domain-entity leakage into its public shape.
 
 - [ ] 4.4 (P) Implement the note list, folder selection, and tag AND/OR filtering orchestration
   - Implement the note-list orchestration exposing the currently filtered list (defaulting to most-recently-modified-first) and the currently selected folder/tags/filter-mode

@@ -676,6 +676,7 @@ class CodeBlockAwareTextEditingController extends TextEditingController {
 
 ##### State Management
 - State model: sealed `SearchState` — initial (below 3-char threshold), searching, results (with highlighted `NoteSearchResultViewModel` list), no-results.
+- **Amendment (2026-08-30, task 4.3)**: a 5th subclass, `searchFailed(String errorMessage)`, was added — this table was silent on `Err(failure)` from `WatchNoteSearchResultsUc`. Collapsing a failure into `no-results` would misrepresent a broken query as a legitimate zero-match search; a distinct `*Failed` subclass matches the pattern already specified below for `FolderCreationFailed`/`TagCreationFailed`/`TrashActionFailed`. Unlike those, `searchFailed` does not carry the prior results list forward — a prior burst's results belong to a different query, so carrying them forward under the current query's failure would be misleading in a way the Folder/Trash case isn't.
 
 #### NoteListCubit / FolderCubit / TagCubit / TrashCubit
 
