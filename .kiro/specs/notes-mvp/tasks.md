@@ -211,12 +211,13 @@
   - _Boundary: TagCubit_
   - _Note:_ Thin Cubit over `CreateTagUc`/`WatchTagsUc`/`DeleteTagUc`, mirroring `FolderCubit`'s final (post-remediation) shape exactly: 4-state model from the start (`TagListLoading`/`TagListLoaded`/`TagCreationFailed`/`TagListLoadFailed`, the last distinguishing live watch-stream failures from `createTag` action failures), `const TagState._();` private constructor for the `currentTags` getter, `isClosed` guarded via direct checks before each `emit`. Approved on first review pass — the two lessons from task 4.5's rejection rounds were briefed upfront and applied correctly without needing a remediation cycle.
 
-- [ ] 4.7 (P) Implement trash management orchestration
+- [x] 4.7 (P) Implement trash management orchestration
   - Implement the trash orchestration exposing the live trashed-notes list and the restore/permanent-delete actions, reusing the same filtered-note-list mechanism scoped to trash rather than a separate mechanism
   - Observable: a passing test suite verifies restoring or permanently deleting an item updates the exposed list accordingly
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
   - _Depends: 3.2, 3.3_
   - _Boundary: TrashCubit_
+  - _Note:_ Last of the 4 sibling Cubits — approved on first review pass, all lessons from the earlier 3 Cubits' rejection rounds applied upfront (4-state model with `TrashListLoadFailed`, `const TrashState._();`, direct `isClosed` guards, design.md amended proactively). Reuses `WatchFilteredNotesUc(lifecycleScope: trash)` per the task's explicit instruction rather than a separate use case; `restore`/`permanentlyDelete` don't manually mutate the list — the live subscription is the sole source of truth, verified timing-correct via a `StreamController`-based test. `TrashedNoteViewModel.daysRemainingLabel` uses calendar-date difference (not raw `Duration.inDays`, which truncates under clock drift) and never goes negative for an overdue-but-not-yet-purged note.
 
 - [ ] 5. Core: screens and widgets
 - [ ] 5.1 (P) Build the note editor screen with title/body editing, code-block highlighting, and save-status display
