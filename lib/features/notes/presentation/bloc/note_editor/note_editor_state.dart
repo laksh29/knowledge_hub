@@ -17,8 +17,13 @@ part 'note_editor_state.freezed.dart';
 /// transitions to avoid UI flicker.
 @freezed
 sealed class NoteEditorState with _$NoteEditorState {
+  const NoteEditorState._();
+
   /// Before the note exists yet (e.g. `CreateNoteUc` in flight).
   const factory NoteEditorState.initializing() = NoteEditorInitializing;
+
+  // when creating/initialising a note fails
+  const factory NoteEditorState.creationFailed(String message) = NoteEditorCreationFailed;
 
   /// Content differs from the last persisted version (Requirement 3.5).
   const factory NoteEditorState.notSaved(NoteEditorViewModel viewModel) = NoteEditorNotSaved;
@@ -32,6 +37,14 @@ sealed class NoteEditorState with _$NoteEditorState {
   /// The last save attempt failed; [viewModel] preserves the in-memory
   /// draft rather than discarding it (Requirement 3.8's zero-data-loss
   /// guarantee — the failure must never lose what the user typed).
-  const factory NoteEditorState.saveFailed(NoteEditorViewModel viewModel, String errorMessage) =
-      NoteEditorSaveFailed;
+  const factory NoteEditorState.saveFailed(NoteEditorViewModel viewModel, String errorMessage) = NoteEditorSaveFailed;
+
+  NoteEditorViewModel? get currentVm => switch (this) {
+    NoteEditorInitializing() => null,
+    NoteEditorCreationFailed() => null,
+    NoteEditorNotSaved(:final viewModel) => viewModel,
+    NoteEditorSaving(:final viewModel) => viewModel,
+    NoteEditorSaved(:final viewModel) => viewModel,
+    NoteEditorSaveFailed(:final viewModel) => viewModel,
+  };
 }

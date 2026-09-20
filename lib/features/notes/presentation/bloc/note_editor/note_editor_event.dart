@@ -1,4 +1,5 @@
-import 'package:flutter/widgets.dart';
+import 'dart:ui';
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'note_editor_event.freezed.dart';
@@ -29,6 +30,5 @@ sealed class NoteEditorEvent with _$NoteEditorEvent {
 
   const factory NoteEditorEvent.manualSaveRequested() = NoteEditorManualSaveRequested;
 
-  const factory NoteEditorEvent.appLifecycleChanged(AppLifecycleState lifecycleState) =
-      NoteEditorAppLifecycleChanged;
+  const factory NoteEditorEvent.appLifecycleChanged(AppLifecycleState lifecycleState) = NoteEditorAppLifecycleChanged;
 }

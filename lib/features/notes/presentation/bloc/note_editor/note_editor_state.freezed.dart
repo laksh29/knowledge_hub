@@ -55,11 +55,12 @@ extension NoteEditorStatePatterns on NoteEditorState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( NoteEditorInitializing value)?  initializing,TResult Function( NoteEditorNotSaved value)?  notSaved,TResult Function( NoteEditorSaving value)?  saving,TResult Function( NoteEditorSaved value)?  saved,TResult Function( NoteEditorSaveFailed value)?  saveFailed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( NoteEditorInitializing value)?  initializing,TResult Function( NoteEditorCreationFailed value)?  creationFailed,TResult Function( NoteEditorNotSaved value)?  notSaved,TResult Function( NoteEditorSaving value)?  saving,TResult Function( NoteEditorSaved value)?  saved,TResult Function( NoteEditorSaveFailed value)?  saveFailed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case NoteEditorInitializing() when initializing != null:
-return initializing(_that);case NoteEditorNotSaved() when notSaved != null:
+return initializing(_that);case NoteEditorCreationFailed() when creationFailed != null:
+return creationFailed(_that);case NoteEditorNotSaved() when notSaved != null:
 return notSaved(_that);case NoteEditorSaving() when saving != null:
 return saving(_that);case NoteEditorSaved() when saved != null:
 return saved(_that);case NoteEditorSaveFailed() when saveFailed != null:
@@ -81,11 +82,12 @@ return saveFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( NoteEditorInitializing value)  initializing,required TResult Function( NoteEditorNotSaved value)  notSaved,required TResult Function( NoteEditorSaving value)  saving,required TResult Function( NoteEditorSaved value)  saved,required TResult Function( NoteEditorSaveFailed value)  saveFailed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( NoteEditorInitializing value)  initializing,required TResult Function( NoteEditorCreationFailed value)  creationFailed,required TResult Function( NoteEditorNotSaved value)  notSaved,required TResult Function( NoteEditorSaving value)  saving,required TResult Function( NoteEditorSaved value)  saved,required TResult Function( NoteEditorSaveFailed value)  saveFailed,}){
 final _that = this;
 switch (_that) {
 case NoteEditorInitializing():
-return initializing(_that);case NoteEditorNotSaved():
+return initializing(_that);case NoteEditorCreationFailed():
+return creationFailed(_that);case NoteEditorNotSaved():
 return notSaved(_that);case NoteEditorSaving():
 return saving(_that);case NoteEditorSaved():
 return saved(_that);case NoteEditorSaveFailed():
@@ -103,11 +105,12 @@ return saveFailed(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( NoteEditorInitializing value)?  initializing,TResult? Function( NoteEditorNotSaved value)?  notSaved,TResult? Function( NoteEditorSaving value)?  saving,TResult? Function( NoteEditorSaved value)?  saved,TResult? Function( NoteEditorSaveFailed value)?  saveFailed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( NoteEditorInitializing value)?  initializing,TResult? Function( NoteEditorCreationFailed value)?  creationFailed,TResult? Function( NoteEditorNotSaved value)?  notSaved,TResult? Function( NoteEditorSaving value)?  saving,TResult? Function( NoteEditorSaved value)?  saved,TResult? Function( NoteEditorSaveFailed value)?  saveFailed,}){
 final _that = this;
 switch (_that) {
 case NoteEditorInitializing() when initializing != null:
-return initializing(_that);case NoteEditorNotSaved() when notSaved != null:
+return initializing(_that);case NoteEditorCreationFailed() when creationFailed != null:
+return creationFailed(_that);case NoteEditorNotSaved() when notSaved != null:
 return notSaved(_that);case NoteEditorSaving() when saving != null:
 return saving(_that);case NoteEditorSaved() when saved != null:
 return saved(_that);case NoteEditorSaveFailed() when saveFailed != null:
@@ -128,10 +131,11 @@ return saveFailed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initializing,TResult Function( NoteEditorViewModel viewModel)?  notSaved,TResult Function( NoteEditorViewModel viewModel)?  saving,TResult Function( NoteEditorViewModel viewModel)?  saved,TResult Function( NoteEditorViewModel viewModel,  String errorMessage)?  saveFailed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initializing,TResult Function( String message)?  creationFailed,TResult Function( NoteEditorViewModel viewModel)?  notSaved,TResult Function( NoteEditorViewModel viewModel)?  saving,TResult Function( NoteEditorViewModel viewModel)?  saved,TResult Function( NoteEditorViewModel viewModel,  String errorMessage)?  saveFailed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case NoteEditorInitializing() when initializing != null:
-return initializing();case NoteEditorNotSaved() when notSaved != null:
+return initializing();case NoteEditorCreationFailed() when creationFailed != null:
+return creationFailed(_that.message);case NoteEditorNotSaved() when notSaved != null:
 return notSaved(_that.viewModel);case NoteEditorSaving() when saving != null:
 return saving(_that.viewModel);case NoteEditorSaved() when saved != null:
 return saved(_that.viewModel);case NoteEditorSaveFailed() when saveFailed != null:
@@ -153,10 +157,11 @@ return saveFailed(_that.viewModel,_that.errorMessage);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initializing,required TResult Function( NoteEditorViewModel viewModel)  notSaved,required TResult Function( NoteEditorViewModel viewModel)  saving,required TResult Function( NoteEditorViewModel viewModel)  saved,required TResult Function( NoteEditorViewModel viewModel,  String errorMessage)  saveFailed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initializing,required TResult Function( String message)  creationFailed,required TResult Function( NoteEditorViewModel viewModel)  notSaved,required TResult Function( NoteEditorViewModel viewModel)  saving,required TResult Function( NoteEditorViewModel viewModel)  saved,required TResult Function( NoteEditorViewModel viewModel,  String errorMessage)  saveFailed,}) {final _that = this;
 switch (_that) {
 case NoteEditorInitializing():
-return initializing();case NoteEditorNotSaved():
+return initializing();case NoteEditorCreationFailed():
+return creationFailed(_that.message);case NoteEditorNotSaved():
 return notSaved(_that.viewModel);case NoteEditorSaving():
 return saving(_that.viewModel);case NoteEditorSaved():
 return saved(_that.viewModel);case NoteEditorSaveFailed():
@@ -174,10 +179,11 @@ return saveFailed(_that.viewModel,_that.errorMessage);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initializing,TResult? Function( NoteEditorViewModel viewModel)?  notSaved,TResult? Function( NoteEditorViewModel viewModel)?  saving,TResult? Function( NoteEditorViewModel viewModel)?  saved,TResult? Function( NoteEditorViewModel viewModel,  String errorMessage)?  saveFailed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initializing,TResult? Function( String message)?  creationFailed,TResult? Function( NoteEditorViewModel viewModel)?  notSaved,TResult? Function( NoteEditorViewModel viewModel)?  saving,TResult? Function( NoteEditorViewModel viewModel)?  saved,TResult? Function( NoteEditorViewModel viewModel,  String errorMessage)?  saveFailed,}) {final _that = this;
 switch (_that) {
 case NoteEditorInitializing() when initializing != null:
-return initializing();case NoteEditorNotSaved() when notSaved != null:
+return initializing();case NoteEditorCreationFailed() when creationFailed != null:
+return creationFailed(_that.message);case NoteEditorNotSaved() when notSaved != null:
 return notSaved(_that.viewModel);case NoteEditorSaving() when saving != null:
 return saving(_that.viewModel);case NoteEditorSaved() when saved != null:
 return saved(_that.viewModel);case NoteEditorSaveFailed() when saveFailed != null:
@@ -192,8 +198,8 @@ return saveFailed(_that.viewModel,_that.errorMessage);case _:
 /// @nodoc
 
 
-class NoteEditorInitializing implements NoteEditorState {
-  const NoteEditorInitializing();
+class NoteEditorInitializing extends NoteEditorState {
+  const NoteEditorInitializing(): super._();
   
 
 
@@ -224,8 +230,74 @@ String toString() {
 /// @nodoc
 
 
-class NoteEditorNotSaved implements NoteEditorState {
-  const NoteEditorNotSaved(this.viewModel);
+class NoteEditorCreationFailed extends NoteEditorState {
+  const NoteEditorCreationFailed(this.message): super._();
+  
+
+ final  String message;
+
+/// Create a copy of NoteEditorState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$NoteEditorCreationFailedCopyWith<NoteEditorCreationFailed> get copyWith => _$NoteEditorCreationFailedCopyWithImpl<NoteEditorCreationFailed>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NoteEditorCreationFailed&&(identical(other.message, message) || other.message == message));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,message);
+
+@override
+String toString() {
+  return 'NoteEditorState.creationFailed(message: $message)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $NoteEditorCreationFailedCopyWith<$Res> implements $NoteEditorStateCopyWith<$Res> {
+  factory $NoteEditorCreationFailedCopyWith(NoteEditorCreationFailed value, $Res Function(NoteEditorCreationFailed) _then) = _$NoteEditorCreationFailedCopyWithImpl;
+@useResult
+$Res call({
+ String message
+});
+
+
+
+
+}
+/// @nodoc
+class _$NoteEditorCreationFailedCopyWithImpl<$Res>
+    implements $NoteEditorCreationFailedCopyWith<$Res> {
+  _$NoteEditorCreationFailedCopyWithImpl(this._self, this._then);
+
+  final NoteEditorCreationFailed _self;
+  final $Res Function(NoteEditorCreationFailed) _then;
+
+/// Create a copy of NoteEditorState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? message = null,}) {
+  return _then(NoteEditorCreationFailed(
+null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class NoteEditorNotSaved extends NoteEditorState {
+  const NoteEditorNotSaved(this.viewModel): super._();
   
 
  final  NoteEditorViewModel viewModel;
@@ -299,8 +371,8 @@ $NoteEditorViewModelCopyWith<$Res> get viewModel {
 /// @nodoc
 
 
-class NoteEditorSaving implements NoteEditorState {
-  const NoteEditorSaving(this.viewModel);
+class NoteEditorSaving extends NoteEditorState {
+  const NoteEditorSaving(this.viewModel): super._();
   
 
  final  NoteEditorViewModel viewModel;
@@ -374,8 +446,8 @@ $NoteEditorViewModelCopyWith<$Res> get viewModel {
 /// @nodoc
 
 
-class NoteEditorSaved implements NoteEditorState {
-  const NoteEditorSaved(this.viewModel);
+class NoteEditorSaved extends NoteEditorState {
+  const NoteEditorSaved(this.viewModel): super._();
   
 
  final  NoteEditorViewModel viewModel;
@@ -449,8 +521,8 @@ $NoteEditorViewModelCopyWith<$Res> get viewModel {
 /// @nodoc
 
 
-class NoteEditorSaveFailed implements NoteEditorState {
-  const NoteEditorSaveFailed(this.viewModel, this.errorMessage);
+class NoteEditorSaveFailed extends NoteEditorState {
+  const NoteEditorSaveFailed(this.viewModel, this.errorMessage): super._();
   
 
  final  NoteEditorViewModel viewModel;

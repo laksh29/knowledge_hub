@@ -1,12 +1,19 @@
 import 'dart:async';
 
+import 'package:app_lifecycle_service/app_lifecycle_service.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:knowledge_hub/core/error/failure.dart';
+import 'package:knowledge_hub/core/error/result.dart';
+import 'package:knowledge_hub/core/utils/debounce_threshold_controller.dart';
+import 'package:knowledge_hub/core/utils/public_utils.dart';
+import 'package:knowledge_hub/features/notes/domain/entities/note.dart';
+import 'package:knowledge_hub/features/notes/domain/repositories/notes_repository.dart';
 import 'package:knowledge_hub/features/notes/domain/usecases/create_note_uc.dart';
 import 'package:knowledge_hub/features/notes/domain/usecases/save_note_content_uc.dart';
 import 'package:knowledge_hub/features/notes/presentation/bloc/note_editor/note_editor_event.dart';
 import 'package:knowledge_hub/features/notes/presentation/bloc/note_editor/note_editor_state.dart';
-import 'package:app_lifecycle_service/app_lifecycle_service.dart';
+import 'package:knowledge_hub/features/notes/presentation/view_models/note_editor_view_model.dart';
 
 /// USER-IMPLEMENT (notes-mvp task 4.2). Orchestrates capture, editing, and
 /// the four autosave triggers (design.md §"NoteEditorBloc" — Requirements
@@ -67,6 +74,8 @@ import 'package:app_lifecycle_service/app_lifecycle_service.dart';
 /// produce `errorMessage`.
 ///
 /// **Lifecycle cleanup.** Cancel the lifecycle subscription in `close()`.
+///
+
 class NoteEditorBloc extends Bloc<NoteEditorEvent, NoteEditorState> {
   NoteEditorBloc({
     required CreateNoteUc createNoteUc,
@@ -83,61 +92,173 @@ class NoteEditorBloc extends Bloc<NoteEditorEvent, NoteEditorState> {
     on<NoteEditorAppLifecycleChanged>(_onAppLifecycleChanged);
 
     _lifecycleSubscription = _appLifecycleService.lifecycleChanges.listen(
-      (AppLifecycleState lifecycleState) =>
-          add(NoteEditorEvent.appLifecycleChanged(lifecycleState)),
+      (AppLifecycleState lifecycleState) => add(NoteEditorEvent.appLifecycleChanged(lifecycleState)),
     );
   }
+
+  final DebounceThresholdRegistry _debounceThresholdRegistry = DebounceThresholdRegistry(
+    thresholdStep: 100,
+    debounceDuration: const Duration(milliseconds: 300),
+  );
 
   final CreateNoteUc _createNoteUc;
   final SaveNoteContentUc _saveNoteContentUc;
   final AppLifecycleService _appLifecycleService;
   late final StreamSubscription<AppLifecycleState> _lifecycleSubscription;
 
-  Future<void> _onStarted(NoteEditorStarted event, Emitter<NoteEditorState> emit) async {
-    throw UnimplementedError(
-      'USER-IMPLEMENT (task 4.2): call _createNoteUc, emit NoteEditorNotSaved on success or '
-      'a design-appropriate failure handling path on Err.',
+  String? _titleToBeSaved;
+  String? _bodyToBeSaved;
+
+  // create a note
+  Future<void> _onStarted(
+    NoteEditorStarted event,
+    Emitter<NoteEditorState> emit,
+  ) async {
+    final Result<Failure, Note> createNote = await _createNoteUc.call();
+
+    createNote.when(
+      failure: (fail) {
+        final String reason = fail.message;
+        printLog("create note start failure: $reason");
+        if (emit.isDone) return;
+        emit(NoteEditorState.creationFailed(reason));
+      },
+      success: (note) {
+        final NoteEditorViewModel vm = NoteEditorViewModel(
+          noteId: note.id,
+          title: note.title,
+          body: note.body,
+          folderId: note.folderId,
+          tagIds: note.tagIds,
+        );
+        if (emit.isDone) return;
+        emit(NoteEditorState.notSaved(vm));
+      },
     );
   }
 
+  // change the title
   Future<void> _onTitleChanged(
     NoteEditorTitleChanged event,
     Emitter<NoteEditorState> emit,
   ) async {
-    throw UnimplementedError(
-      'USER-IMPLEMENT (task 4.2): buffer the title change and converge on the same save path '
-      'as _onBodyChanged.',
+    _titleToBeSaved = event.title;
+    await _debounceThresholdRegistry.run(
+      currentCount: event.title.length,
+      key: 'title',
+      execute: () async {
+        final result = await _saveNote(emit);
+
+        return result;
+      },
     );
   }
 
-  Future<void> _onBodyChanged(NoteEditorBodyChanged event, Emitter<NoteEditorState> emit) async {
-    throw UnimplementedError(
-      'USER-IMPLEMENT (task 4.2): the 300ms-idle-debounce and 100-char-threshold triggers both '
-      'live here — see the class-level design note.',
+  // change the body
+  Future<void> _onBodyChanged(
+    NoteEditorBodyChanged event,
+    Emitter<NoteEditorState> emit,
+  ) async {
+    _bodyToBeSaved = event.body;
+    await _debounceThresholdRegistry.run(
+      key: 'body',
+      currentCount: event.body.length,
+      execute: () async {
+        final result = await _saveNote(emit);
+
+        return result;
+      },
     );
   }
 
+  // manual update of note
   Future<void> _onManualSaveRequested(
     NoteEditorManualSaveRequested event,
     Emitter<NoteEditorState> emit,
   ) async {
-    throw UnimplementedError(
-      'USER-IMPLEMENT (task 4.2): save immediately, no debounce, no threshold check.',
+    await _saveNote(
+      emit,
     );
   }
 
+  // save on app lifecycle change to pause/inactive/detached
   Future<void> _onAppLifecycleChanged(
     NoteEditorAppLifecycleChanged event,
     Emitter<NoteEditorState> emit,
   ) async {
-    throw UnimplementedError(
-      'USER-IMPLEMENT (task 4.2): save immediately on paused/inactive/detached.',
+    final bool shouldSave = switch (event.lifecycleState) {
+      AppLifecycleState.paused => true,
+      AppLifecycleState.inactive => true,
+      AppLifecycleState.detached => true,
+      _ => false,
+    };
+
+    if (shouldSave) {
+      await _saveNote(
+        emit,
+      );
+    }
+  }
+
+  Future<bool> _saveNote(
+    Emitter<NoteEditorState> emit,
+  ) async {
+    final NoteEditorViewModel? vm = state.currentVm;
+
+    if (vm == null) {
+      printLog("save note - vm is null");
+
+      if (emit.isDone) return false;
+      emit(const NoteEditorState.creationFailed("note has not been created"));
+      return false;
+    }
+
+    final NoteEditorViewModel newVm = NoteEditorViewModel(
+      noteId: vm.noteId,
+      title: _titleToBeSaved ?? '',
+      body: _bodyToBeSaved ?? '',
+      folderId: vm.folderId,
+      tagIds: vm.tagIds,
+    );
+    if (emit.isDone) return false;
+    emit(NoteEditorState.saving(newVm));
+
+    final SaveNoteContentParams params = SaveNoteContentParams(
+      noteId: newVm.noteId,
+      title: newVm.title,
+      body: newVm.body,
+    );
+
+    Result<Failure, Note> saveTitle = await _saveNoteContentUc.call(params);
+
+    return saveTitle.when(
+      failure: (fail) {
+        final String reason = fail.message;
+        printLog("save failed: $reason");
+        if (emit.isDone) return false;
+        emit(NoteEditorState.saveFailed(newVm, reason));
+        return false;
+      },
+      success: (Note data) {
+        final NoteEditorViewModel updatedVm = NoteEditorViewModel(
+          noteId: data.id,
+          title: data.title,
+          body: data.body,
+          folderId: data.folderId,
+          tagIds: data.tagIds,
+        );
+        if (emit.isDone) return false;
+        emit(NoteEditorState.saved(updatedVm));
+
+        return true;
+      },
     );
   }
 
   @override
   Future<void> close() {
     _lifecycleSubscription.cancel();
+    _debounceThresholdRegistry.dispose();
     return super.close();
   }
 }
