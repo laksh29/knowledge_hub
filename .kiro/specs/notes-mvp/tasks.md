@@ -203,12 +203,13 @@
   - _Boundary: FolderCubit_
   - _Note:_ Thin Cubit over `CreateFolderUc`/`WatchFoldersUc`/`DeleteFolderUc`. Routes every `createFolder` failure (not only `DuplicateNameFailure`) through `FolderCreationFailed`, carrying the current list forward. Went through 2 review rounds: round 1 rejected for reusing `FolderCreationFailed` to also represent live watch-stream failures (mislabeling + a concrete blank-error-message bug path via `mapFailureToMessage`'s not-found silent-no-op case) — fixed by adding a dedicated `FolderListLoadFailed` state (mirroring `NoteListLoadFailed`, task 4.4), no list carried forward. Round 2 rejected only for a missing design.md amendment note; fixed. Also discovered along the way: freezed sealed-union classes need a private constructor (`const FolderState._();`-style, matching `Note`/`Folder`/`Tag`'s existing pattern) or an extension to support custom getters — an in-class getter with a body fails to compile for every generated variant.
 
-- [ ] 4.6 (P) Implement tag management orchestration
+- [x] 4.6 (P) Implement tag management orchestration
   - Implement the tag-management orchestration exposing the live tag list and a distinct creation-failed state (carrying the current list forward) when a duplicate name is attempted
   - Observable: a passing test suite verifies a duplicate-name attempt emits the distinct failure state without losing the existing tag list
   - _Requirements: 5.1_
   - _Depends: 3.5_
   - _Boundary: TagCubit_
+  - _Note:_ Thin Cubit over `CreateTagUc`/`WatchTagsUc`/`DeleteTagUc`, mirroring `FolderCubit`'s final (post-remediation) shape exactly: 4-state model from the start (`TagListLoading`/`TagListLoaded`/`TagCreationFailed`/`TagListLoadFailed`, the last distinguishing live watch-stream failures from `createTag` action failures), `const TagState._();` private constructor for the `currentTags` getter, `isClosed` guarded via direct checks before each `emit`. Approved on first review pass — the two lessons from task 4.5's rejection rounds were briefed upfront and applied correctly without needing a remediation cycle.
 
 - [ ] 4.7 (P) Implement trash management orchestration
   - Implement the trash orchestration exposing the live trashed-notes list and the restore/permanent-delete actions, reusing the same filtered-note-list mechanism scoped to trash rather than a separate mechanism
