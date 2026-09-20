@@ -195,12 +195,13 @@
   - _Boundary: NoteListCubit_
   - _Note:_ Thin Cubit wrapping `WatchFilteredNotesUc`; `selectFolder`/`toggleTag`/`setTagFilterMode` mutate the active filter and re-subscribe. Doesn't re-sort (`NotesRepositoryImpl.watchNotes` already sorts most-recently-modified-first). Two judgment calls, documented inline: reuses domain `NoteListFilterParams` directly as `NoteListLoaded`'s `activeFilter` field (design.md names a `NoteListFilterViewModel` but never defines it or lists it in the File Structure Plan — the domain type is already primitive-only with no leakage concern), and adds a 3rd state `NoteListLoadFailed` for stream errors (design.md's 2-state model was silent on this), deliberately not carrying the prior list forward since it no longer corresponds to the current filter. The subscription-cancel-and-resubscribe race (rapid `selectFolder` calls with out-of-order stream resolution) was empirically verified safe via a throwaway probe — Dart's `StreamSubscription.cancel()` genuinely suppresses further delivery from the canceled subscription, confirmed not just reasoned about.
 
-- [ ] 4.5 (P) Implement folder management orchestration
+- [x] 4.5 (P) Implement folder management orchestration
   - Implement the folder-management orchestration exposing the live folder list and a distinct creation-failed state (carrying the current list forward) when a duplicate name is attempted
   - Observable: a passing test suite verifies a duplicate-name attempt emits the distinct failure state without losing the existing folder list
   - _Requirements: 4.1, 4.2, 4.3_
   - _Depends: 3.4_
   - _Boundary: FolderCubit_
+  - _Note:_ Thin Cubit over `CreateFolderUc`/`WatchFoldersUc`/`DeleteFolderUc`. Routes every `createFolder` failure (not only `DuplicateNameFailure`) through `FolderCreationFailed`, carrying the current list forward. Went through 2 review rounds: round 1 rejected for reusing `FolderCreationFailed` to also represent live watch-stream failures (mislabeling + a concrete blank-error-message bug path via `mapFailureToMessage`'s not-found silent-no-op case) — fixed by adding a dedicated `FolderListLoadFailed` state (mirroring `NoteListLoadFailed`, task 4.4), no list carried forward. Round 2 rejected only for a missing design.md amendment note; fixed. Also discovered along the way: freezed sealed-union classes need a private constructor (`const FolderState._();`-style, matching `Note`/`Folder`/`Tag`'s existing pattern) or an extension to support custom getters — an in-class getter with a body fails to compile for every generated variant.
 
 - [ ] 4.6 (P) Implement tag management orchestration
   - Implement the tag-management orchestration exposing the live tag list and a distinct creation-failed state (carrying the current list forward) when a duplicate name is attempted

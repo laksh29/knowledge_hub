@@ -378,7 +378,7 @@ sequenceDiagram
     User->>NoteEditorBloc: ManualSaveRequested
     NoteEditorBloc->>SaveNoteContentUc: call params immediately
 ```
-Key decisions not obvious from the diagram: the 300ms-idle path uses a `bloc_concurrency` `restartable` debounce transformer on the change event; the 100-char path is a plain counter check inside the same handler that bypasses the debounce transformer when the threshold is hit first — both paths converge on the same `SaveNoteContentUc` call.
+Key decisions not obvious from the diagram: the 300ms-idle path and the 100-char path are both handled inside the same handler via a plain, handler-owned `Timer` (cancel-and-restart on every keystroke) rather than a `bloc_concurrency`/`stream_transform` event-transformer — see the "NoteEditorBloc" §"State Management" amendment (2026-09-19) for why a transformer-level debounce can't support the early-bypass requirement — both paths converge on the same `SaveNoteContentUc` call.
 
 ### Search Flow (Requirement 6)
 ```mermaid
@@ -651,15 +651,16 @@ class CodeBlockAwareTextEditingController extends TextEditingController {
 **Contracts**: State [x]
 
 ##### State Management
-- State model: sealed `NoteEditorState` with one distinct subclass per save-status scenario — **not** a single "ready" state carrying a `saveStatusLabel` flag/getter (that would be exactly the mono-state anti-pattern the project's steering prohibits: "no single state with loading/loaded/error flags or enums"). Five subclasses:
+- State model: sealed `NoteEditorState` with one distinct subclass per save-status scenario — **not** a single "ready" state carrying a `saveStatusLabel` flag/getter (that would be exactly the mono-state anti-pattern the project's steering prohibits: "no single state with loading/loaded/error flags or enums"). Six subclasses:
   - `NoteEditorInitializing()` — before the note exists yet (e.g., `CreateNoteUc` in flight).
+  - `NoteEditorCreationFailed(String errorMessage)` — **amendment (2026-09-19, task 4.2)**: `CreateNoteUc` failed. The original 5-subclass model left this path with no user-facing recourse — a failure here would strand the Bloc in `NoteEditorInitializing` forever, since that state carries no error/retry affordance and no `NoteEditorViewModel` yet exists to carry forward into any of the other subclasses. Carries no `NoteEditorViewModel` (none exists yet); the editor screen (task 5.1) is expected to offer a retry action that re-dispatches `NoteEditorEvent.started()`.
   - `NoteEditorNotSaved(NoteEditorViewModel)` — content differs from the last persisted version (3.5).
   - `NoteEditorSaving(NoteEditorViewModel)` — a save is in flight (3.6).
   - `NoteEditorSaved(NoteEditorViewModel)` — the last save completed successfully (3.7).
   - `NoteEditorSaveFailed(NoteEditorViewModel, String errorMessage)` — the last save attempt failed; the in-memory draft is not lost.
-  Each non-initializing subclass carries the same `NoteEditorViewModel` (title/body/folder/tags — presentation-ready getters, no status field) forward, per the guide's §7.3 pattern of carrying ViewModels across state transitions to avoid UI flicker. Which subclass is active *is* the save status — `SaveStatusIndicatorWidget` switches on `state.runtimeType`, it never reads a label field off a shared state.
+  Each non-initializing, non-creation-failed subclass carries the same `NoteEditorViewModel` (title/body/folder/tags — presentation-ready getters, no status field) forward, per the guide's §7.3 pattern of carrying ViewModels across state transitions to avoid UI flicker. Which subclass is active *is* the save status — `SaveStatusIndicatorWidget` switches on `state.runtimeType`, it never reads a label field off a shared state.
 - Persistence & consistency: every autosave/manual-save path (debounce-idle, char-count, lifecycle-triggered, manual) converges on the same `SaveNoteContentUc` call, so there is exactly one write path to reason about for the zero-data-loss guarantee (3.8).
-- Concurrency strategy: `restartable` debounce transformer ensures only the latest pending save survives rapid typing; the char-count path is synchronous within the handler and not subject to the transformer.
+- Concurrency strategy — **amendment (2026-09-19, task 4.2)**: the debounce is implemented as a plain, handler-owned `Timer` (cancel-and-restart on every `NoteEditorBodyChanged`/`NoteEditorTitleChanged` event), not a `bloc_concurrency`/`stream_transform` event-transformer. A transformer-based debounce gates *when the handler is invoked at all* — the handler body cannot "bypass" a delay it never got to run during, so the char-count-threshold's early-save requirement is mechanically incompatible with a transformer-level debounce (unlike `SearchBloc`, task 4.3, which has no bypass rule and is correctly transformer-based). With a handler-owned `Timer`, the char-count check and the idle-reset both live in the same synchronous code path: the handler always runs immediately on every keystroke, updates the buffered content/counter, and either saves immediately (threshold crossed — canceling any pending timer) or cancels-and-restarts the 300ms timer (threshold not yet crossed).
 
 #### SearchBloc
 
@@ -685,6 +686,7 @@ Summary-only (no new boundary beyond what `WatchFilteredNotesUc` and the folder/
 **State model** (sealed, distinct subclasses — no shared state with a status flag/enum, same rule as `NoteEditorState` above):
 - `NoteListState`: `NoteListLoading()`, `NoteListLoaded(List<NoteListItemViewModel> notes, NoteListFilterViewModel activeFilter)`. No separate "empty" subclass — an empty folder/tag-filter result is just `NoteListLoaded` with zero items (matching the guide's own §7.3 example, where `ProductsSearchSuccess` doesn't split into a separate empty variant); the page derives an empty-state placeholder from `notes.isEmpty` via a `NoteListItemViewModel`-list check, not a Bloc-level flag.
 - `FolderState`: `FolderListLoading()`, `FolderListLoaded(List<FolderViewModel> folders)`, `FolderCreationFailed(List<FolderViewModel> currentFolders, String errorMessage)` — the failure subclass still carries the current list forward (per §7.3's carry-ViewModels-forward pattern) so a duplicate-name error doesn't blank the folder list.
+  - **Amendment (2026-09-20, task 4.5)**: a 4th subclass, `FolderListLoadFailed(String errorMessage)`, covers `Err(failure)` from the live `WatchFoldersUc` subscription — distinct from a `createFolder` action failure. It does not carry the prior folder list forward, since a broken watch query means that list no longer corresponds to anything trustworthy (mirrors `SearchBloc`'s `searchFailed` amendment above and `NoteListState.loadFailed` from task 4.4).
 - `TagState`: mirrors `FolderState` — `TagListLoading()`, `TagListLoaded(List<TagViewModel> tags)`, `TagCreationFailed(List<TagViewModel> currentTags, String errorMessage)`.
 - `TrashState`: `TrashLoading()`, `TrashLoaded(List<TrashedNoteViewModel> items)`, `TrashActionFailed(List<TrashedNoteViewModel> currentItems, String errorMessage)` (restore/permanent-delete failure, list carried forward).
 
