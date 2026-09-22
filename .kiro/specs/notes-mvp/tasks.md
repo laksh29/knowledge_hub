@@ -254,12 +254,13 @@
   - _Boundary: TagCreationDialogWidget_
   - _Note:_ A faithful structural mirror of `FolderCreationDialogWidget` (task 5.3), adapted for `TagCubit`/`TagViewModel`. Explicitly verified `TagState`'s actual API before assuming it matched `FolderState`'s shape — `TagState` uses a private-constructor-based `currentTags` getter, not an extension, but the widget's own inline pattern-match over all 4 subclasses is independent of that getter either way. Same disclosed gaps as the folder dialog (no scrim token, no localization, pragmatic `_maxListHeight` constant) and same "not wired into NoteListPage here" reasoning (task 6.2 owns that). Approved on direct review after two consecutive reviewer-agent infrastructure failures (a connection drop, then a stall) — verified directly instead: `flutter analyze` clean, full suite green on rerun (one earlier run showed a single flaky failure in `NoteEditorBloc`'s real-timer debounce tests, unrelated to this change, not reproduced on a clean rerun).
 
-- [ ] 5.5 (P) Build the trash screen
+- [x] 5.5 (P) Build the trash screen
   - Build the screen presenting trashed notes with restore and permanent-delete actions per item
   - Observable: restoring an item returns it to the main note list with its original folder/tags visibly intact, and permanently deleting an item removes it from the trash list immediately
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
   - _Depends: 4.7_
   - _Boundary: TrashPage_
+  - _Note:_ Last of the 5 UI-screen tasks. `restore`/`permanentlyDelete` are never manually reflected in the UI — `TrashCubit`'s own live watch subscription naturally reflects the change once an item leaves the trash-scoped result set, satisfying the "removes it from the trash list immediately" Observable directly. `TrashActionFailed`'s carried-forward list renders through the same list widget as `TrashLoaded`, keeping the list visible during an action failure. Added a delete-confirmation dialog before the irreversible `permanentlyDelete` call (a deliberate scope addition, not present for the reversible `restore` action) — independently verified correct via the reviewer's own throwaway test, including a second-row case ruling out a stale-id bug. Approved on first review pass.
 
 - [ ] 6. Integration: wiring the feature together
 - [ ] 6.1 Wire dependency injection for the complete note-taking feature
