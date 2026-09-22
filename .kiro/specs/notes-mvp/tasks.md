@@ -246,12 +246,13 @@
   - _Boundary: FolderCreationDialogWidget_
   - _Note:_ A self-contained dialog (not launched here — task 6.2 wires the actual entry point on `NoteListPage`, per its own `_Depends:` list and design.md's File Structure Plan, confirmed by the reviewer as the correct interpretation, not a gap). `FolderCreationFailed`'s carried-forward folder list renders through the same branch as `FolderListLoaded`, satisfying the "without clearing the existing folder list" Observable directly; the field-level `errorText` comes from `AppTextFieldWidget`, distinct from `FolderListLoadFailed`'s separate stream-error presentation. Approved on first review pass, verified with two independent throwaway `pumpWidget` tests (implementer's and reviewer's own, both deleted, never committed) proving the exact duplicate-name message, list preservation, empty-name no-op guard, and correct per-row delete wiring.
 
-- [ ] 5.4 (P) Build the tag management dialog
+- [x] 5.4 (P) Build the tag management dialog
   - Build the dialog (launched from the note list screen) presenting the tag creation entry using the shared text-field component and the tag list with delete actions, surfacing a duplicate-name attempt as a field-level message rather than a generic error
   - Observable: attempting to create a tag with an existing name shows the specific duplicate-name message without clearing the existing tag list from view
   - _Requirements: 5.1_
   - _Depends: 4.6_
   - _Boundary: TagCreationDialogWidget_
+  - _Note:_ A faithful structural mirror of `FolderCreationDialogWidget` (task 5.3), adapted for `TagCubit`/`TagViewModel`. Explicitly verified `TagState`'s actual API before assuming it matched `FolderState`'s shape — `TagState` uses a private-constructor-based `currentTags` getter, not an extension, but the widget's own inline pattern-match over all 4 subclasses is independent of that getter either way. Same disclosed gaps as the folder dialog (no scrim token, no localization, pragmatic `_maxListHeight` constant) and same "not wired into NoteListPage here" reasoning (task 6.2 owns that). Approved on direct review after two consecutive reviewer-agent infrastructure failures (a connection drop, then a stall) — verified directly instead: `flutter analyze` clean, full suite green on rerun (one earlier run showed a single flaky failure in `NoteEditorBloc`'s real-timer debounce tests, unrelated to this change, not reproduced on a clean rerun).
 
 - [ ] 5.5 (P) Build the trash screen
   - Build the screen presenting trashed notes with restore and permanent-delete actions per item
