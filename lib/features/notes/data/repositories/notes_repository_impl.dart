@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:injectable/injectable.dart';
 import 'package:knowledge_hub/core/error/exception.dart';
 import 'package:knowledge_hub/core/error/failure.dart';
 import 'package:knowledge_hub/core/error/result.dart';
@@ -37,6 +38,7 @@ import 'package:uuid/uuid.dart';
 ///   ever read or write one as a proxy for the other (see design.md's Data
 ///   Models section) — `moveNoteToTrash`/`restoreNoteFromTrash` only ever
 ///   touch `deletedAt`, never `folderId`.
+@LazySingleton(as: NotesRepository)
 class NotesRepositoryImpl implements NotesRepository {
   const NotesRepositoryImpl(this._dataSource);
 

@@ -1,3 +1,4 @@
+import 'package:injectable/injectable.dart';
 import 'package:knowledge_hub/core/error/exception.dart';
 import 'package:knowledge_hub/features/notes/data/datasources/tags_data_source.dart';
 import 'package:knowledge_hub/features/notes/data/local/notes_database.dart';
@@ -13,6 +14,7 @@ const int _sqliteConstraintUniqueExtendedResultCode = 2067;
 /// "Drift") per the guide's §6.2 convention so a future
 /// `TagsNetworkDataSourceImpl` (v1.1, Supabase-backed) can implement the
 /// same contract without this class being renamed.
+@LazySingleton(as: TagsDataSource)
 class TagsLocalDataSourceImpl implements TagsDataSource {
   const TagsLocalDataSourceImpl(this._database);
 

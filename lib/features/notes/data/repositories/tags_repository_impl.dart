@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:injectable/injectable.dart';
 import 'package:knowledge_hub/core/error/exception.dart';
 import 'package:knowledge_hub/core/error/failure.dart';
 import 'package:knowledge_hub/core/error/result.dart';
@@ -19,6 +20,7 @@ import 'package:knowledge_hub/features/notes/domain/repositories/tags_repository
 /// `TagsLocalDataSourceImpl`/the schema, already covered by tasks 1.7/2.5 --
 /// this repository only needs to pass `deleteTag` through without swallowing
 /// or altering its outcome, and without ever touching the notes themselves).
+@LazySingleton(as: TagsRepository)
 class TagsRepositoryImpl implements TagsRepository {
   const TagsRepositoryImpl(this._dataSource);
 

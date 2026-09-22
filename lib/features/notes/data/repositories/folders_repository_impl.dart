@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:injectable/injectable.dart';
 import 'package:knowledge_hub/core/error/exception.dart';
 import 'package:knowledge_hub/core/error/failure.dart';
 import 'package:knowledge_hub/core/error/result.dart';
@@ -18,6 +19,7 @@ import 'package:knowledge_hub/features/notes/domain/repositories/folders_reposit
 /// foreign key owned by `FoldersLocalDataSourceImpl`/the schema, already
 /// covered by tasks 1.7/2.4 -- this repository only needs to pass
 /// `deleteFolder` through without swallowing or altering its outcome).
+@LazySingleton(as: FoldersRepository)
 class FoldersRepositoryImpl implements FoldersRepository {
   const FoldersRepositoryImpl(this._dataSource);
 

@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:injectable/injectable.dart';
 import 'package:knowledge_hub/core/error/exception.dart';
 import 'package:knowledge_hub/features/notes/data/datasources/notes_data_source.dart';
 import 'package:knowledge_hub/features/notes/data/local/notes_database.dart';
@@ -9,6 +10,7 @@ import 'package:knowledge_hub/features/notes/data/models/note_search_result_mode
 /// "Drift") per the guide's §6.2 convention so a future
 /// `NotesNetworkDataSourceImpl` (v1.1, Supabase-backed) can implement the
 /// same contract without this class being renamed.
+@LazySingleton(as: NotesDataSource)
 class NotesLocalDataSourceImpl implements NotesDataSource {
   const NotesLocalDataSourceImpl(this._database);
 
