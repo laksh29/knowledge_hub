@@ -71,7 +71,7 @@ void main() {
 
     test(
       "ServerFailure and NetworkFailure route through design.md's documented catchall "
-      'message, since neither is thrown anywhere in this offline-only feature today',
+      'message, and that message never mentions "server" or "network"',
       () {
         const ServerFailure serverFailure = ServerFailure();
         const NetworkFailure networkFailure = NetworkFailure();

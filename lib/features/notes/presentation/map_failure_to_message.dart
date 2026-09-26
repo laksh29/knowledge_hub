@@ -22,11 +22,16 @@ const String _cacheFailureMessage =
 
 /// design.md's Error Categories table (`.kiro/specs/notes-mvp/design.md`)
 /// documents this exact string as the catchall for "any other/future
-/// `Failure` subtype". `ServerFailure`/`NetworkFailure` are not thrown
-/// anywhere in this offline-only feature today (network support is
-/// deferred to v1.1) — they are precisely the "future" subtypes that row
-/// anticipates, so they route through it rather than inventing new,
-/// design.md-undocumented copy.
+/// `Failure` subtype". `NetworkFailure` is not thrown anywhere in this
+/// offline-only feature today (network support is deferred to v1.1) — a
+/// pure "future" subtype this row anticipates. `ServerFailure` IS thrown
+/// today, but only as `NotesRepositoryImpl`/`FoldersRepositoryImpl`/
+/// `TagsRepositoryImpl`'s generic `catch (e)` fallback for an unexpected
+/// (non-`CacheException`) local-storage exception — a reused generic type
+/// rather than a genuine network/server failure, since this feature has no
+/// server to fail against. Either way the message below never mentions
+/// "server" or "network", so no network-related copy is ever shown to the
+/// user (notes-mvp Requirement 8.2).
 const String _catchAllFailureMessage =
     "We couldn't complete that action. Please try again — your notes are safe.";
 
