@@ -1,10 +1,22 @@
+import 'dart:async';
+
+import 'package:app_lifecycle_service/app_lifecycle_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:knowledge_hub/core/design_system/knowledge_hub_colors.dart';
 import 'package:knowledge_hub/core/design_system/knowledge_hub_radii.dart';
 import 'package:knowledge_hub/core/design_system/knowledge_hub_spacing.dart';
 import 'package:knowledge_hub/core/design_system/knowledge_hub_text_styles.dart';
+import 'package:knowledge_hub/core/design_system/widgets/circular_icon_button_widget.dart';
+import 'package:knowledge_hub/core/di/injection.dart';
 import 'package:knowledge_hub/features/notes/domain/entities/note_list_filter.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/create_note_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/move_note_to_trash_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/permanently_delete_note_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/restore_note_from_trash_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/save_note_content_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/watch_filtered_notes_uc.dart';
+import 'package:knowledge_hub/features/notes/presentation/bloc/note_editor/note_editor_bloc.dart';
 import 'package:knowledge_hub/features/notes/presentation/bloc/search/search_bloc.dart';
 import 'package:knowledge_hub/features/notes/presentation/bloc/search/search_event.dart';
 import 'package:knowledge_hub/features/notes/presentation/bloc/search/search_state.dart';
@@ -14,15 +26,20 @@ import 'package:knowledge_hub/features/notes/presentation/cubit/note_list/note_l
 import 'package:knowledge_hub/features/notes/presentation/cubit/note_list/note_list_state.dart';
 import 'package:knowledge_hub/features/notes/presentation/cubit/tag/tag_cubit.dart';
 import 'package:knowledge_hub/features/notes/presentation/cubit/tag/tag_state.dart';
+import 'package:knowledge_hub/features/notes/presentation/cubit/trash/trash_cubit.dart';
+import 'package:knowledge_hub/features/notes/presentation/pages/note_editor_page.dart';
+import 'package:knowledge_hub/features/notes/presentation/pages/trash_page.dart';
 import 'package:knowledge_hub/features/notes/presentation/view_models/folder_view_model.dart';
 import 'package:knowledge_hub/features/notes/presentation/view_models/note_list_item_view_model.dart';
 import 'package:knowledge_hub/features/notes/presentation/view_models/note_search_result_view_model.dart';
 import 'package:knowledge_hub/features/notes/presentation/view_models/tag_view_model.dart';
 import 'package:knowledge_hub/features/notes/presentation/widgets/folder_chip_widget.dart';
+import 'package:knowledge_hub/features/notes/presentation/widgets/folder_creation_dialog_widget.dart';
 import 'package:knowledge_hub/features/notes/presentation/widgets/highlighted_snippet_text_widget.dart';
 import 'package:knowledge_hub/features/notes/presentation/widgets/note_list_item_widget.dart';
 import 'package:knowledge_hub/features/notes/presentation/widgets/search_bar_widget.dart';
 import 'package:knowledge_hub/features/notes/presentation/widgets/tag_chip_widget.dart';
+import 'package:knowledge_hub/features/notes/presentation/widgets/tag_creation_dialog_widget.dart';
 import 'package:knowledge_hub/features/notes/presentation/widgets/tag_filter_mode_toggle_widget.dart';
 
 /// Presents the note list, folder/tag filtering, and embedded search as a
@@ -45,6 +62,20 @@ import 'package:knowledge_hub/features/notes/presentation/widgets/tag_filter_mod
 /// **No localization infrastructure exists in this project** (confirmed
 /// absent, same as task 5.1's `NoteEditorPage`) — hardcoded `String`
 /// literals are the established, accepted pattern for all UI copy here.
+///
+/// **Navigation entry points (task 6.2)**: the header row's three
+/// [CircularIconButtonWidget]s open the folder dialog, the tag dialog, and
+/// `TrashPage` (pushed with its own page-scoped `BlocProvider<TrashCubit>`,
+/// per the guide's "Blocs/Cubits constructed at navigation time" rule); the
+/// [FloatingActionButton] pushes `NoteEditorPage` with its own page-scoped
+/// `BlocProvider<NoteEditorBloc>` for fast capture (Requirement 1.1-1.3).
+/// Each per-row delete-to-trash action resolves `MoveNoteToTrashUc` directly
+/// via `getIt` (a plain use case, not a Bloc/Cubit, so `get_it` — not
+/// `BlocProvider` — is the correct resolution point) rather than adding a
+/// method to the already-approved `NoteListCubit`; that Cubit's live
+/// subscription reflects the note leaving the list once the move lands, the
+/// same "live subscription is the source of truth" pattern `TrashCubit`
+/// already established for `restore`/`permanentlyDelete`.
 class NoteListPage extends StatelessWidget {
   const NoteListPage({super.key});
 
@@ -60,6 +91,8 @@ class NoteListPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              const _NoteListHeaderRow(),
+              const SizedBox(height: KnowledgeHubSpacing.base),
               SearchBarWidget(
                 onChanged: (String query) => searchBloc.add(SearchEvent.queryChanged(query)),
               ),
@@ -69,8 +102,96 @@ class NoteListPage extends StatelessWidget {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: KnowledgeHubColors.primary,
+        foregroundColor: KnowledgeHubColors.onPrimary,
+        elevation: 0,
+        onPressed: () => _openNoteEditorForNewNote(context),
+        child: const Icon(Icons.add),
+      ),
     );
   }
+}
+
+/// "Notes" title plus the folder-management / tag-management / trash
+/// navigation entry points (Requirements 1.1-1.3, 7.1).
+class _NoteListHeaderRow extends StatelessWidget {
+  const _NoteListHeaderRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: <Widget>[
+        Text(
+          'Notes',
+          style: KnowledgeHubTextStyles.titleMd.copyWith(color: KnowledgeHubColors.ink),
+        ),
+        Row(
+          children: <Widget>[
+            CircularIconButtonWidget(
+              icon: Icons.folder_outlined,
+              onPressed: () => _openFolderManagementDialog(context),
+            ),
+            const SizedBox(width: KnowledgeHubSpacing.sm),
+            CircularIconButtonWidget(
+              icon: Icons.label_outline,
+              onPressed: () => _openTagManagementDialog(context),
+            ),
+            const SizedBox(width: KnowledgeHubSpacing.sm),
+            CircularIconButtonWidget(
+              icon: Icons.delete_outline,
+              onPressed: () => _openTrashPage(context),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+void _openFolderManagementDialog(BuildContext context) {
+  showDialog<void>(
+    context: context,
+    builder: (BuildContext dialogContext) => const FolderCreationDialogWidget(),
+  );
+}
+
+void _openTagManagementDialog(BuildContext context) {
+  showDialog<void>(
+    context: context,
+    builder: (BuildContext dialogContext) => const TagCreationDialogWidget(),
+  );
+}
+
+void _openTrashPage(BuildContext context) {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (BuildContext routeContext) => BlocProvider<TrashCubit>(
+        create: (_) => TrashCubit(
+          watchFilteredNotesUc: getIt<WatchFilteredNotesUc>(),
+          restoreNoteFromTrashUc: getIt<RestoreNoteFromTrashUc>(),
+          permanentlyDeleteNoteUc: getIt<PermanentlyDeleteNoteUc>(),
+        ),
+        child: const TrashPage(),
+      ),
+    ),
+  );
+}
+
+void _openNoteEditorForNewNote(BuildContext context) {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (BuildContext routeContext) => BlocProvider<NoteEditorBloc>(
+        create: (_) => NoteEditorBloc(
+          createNoteUc: getIt<CreateNoteUc>(),
+          saveNoteContentUc: getIt<SaveNoteContentUc>(),
+          appLifecycleService: getIt<AppLifecycleService>(),
+        ),
+        child: const NoteEditorPage(),
+      ),
+    ),
+  );
 }
 
 /// Switches between the search-result presentation and the normal filtered
@@ -254,11 +375,14 @@ class _NoteListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final MoveNoteToTrashUc moveNoteToTrashUc = getIt<MoveNoteToTrashUc>();
+
     return ListView.builder(
       itemCount: notes.length,
       itemBuilder: (BuildContext context, int index) => NoteListItemWidget(
         viewModel: notes[index],
         onTap: () {},
+        onDeletePressed: () => unawaited(moveNoteToTrashUc(notes[index].noteId)),
       ),
     );
   }

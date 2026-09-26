@@ -3,6 +3,7 @@ import 'package:knowledge_hub/core/design_system/knowledge_hub_colors.dart';
 import 'package:knowledge_hub/core/design_system/knowledge_hub_radii.dart';
 import 'package:knowledge_hub/core/design_system/knowledge_hub_spacing.dart';
 import 'package:knowledge_hub/core/design_system/knowledge_hub_text_styles.dart';
+import 'package:knowledge_hub/core/design_system/widgets/circular_icon_button_widget.dart';
 import 'package:knowledge_hub/features/notes/presentation/view_models/note_list_item_view_model.dart';
 
 /// Renders a single row in the note list (task 5.2, Requirements 5.2, 5.3,
@@ -21,10 +22,25 @@ import 'package:knowledge_hub/features/notes/presentation/view_models/note_list_
 /// for now; the "folder · " prefix can be added once a resolved folder name
 /// is available to pass in.
 class NoteListItemWidget extends StatelessWidget {
-  const NoteListItemWidget({required this.viewModel, required this.onTap, super.key});
+  const NoteListItemWidget({
+    required this.viewModel,
+    required this.onTap,
+    required this.onDeletePressed,
+    super.key,
+  });
 
   final NoteListItemViewModel viewModel;
   final VoidCallback onTap;
+
+  /// Moves this row's note to Trash (task 6.2, Requirement 7.1 — folded into
+  /// this task's scope per the discovered "no trash entry point anywhere"
+  /// gap). `NoteListCubit`'s own live `WatchFilteredNotesUc` subscription is
+  /// the sole source of truth for the list reflecting the move — this
+  /// callback does not need to (and must not) mutate `viewModel` or any
+  /// local list state itself, mirroring `TrashCubit.restore`/
+  /// `permanentlyDelete`'s established "live subscription is the source of
+  /// truth" pattern.
+  final VoidCallback onDeletePressed;
 
   @override
   Widget build(BuildContext context) {
@@ -45,11 +61,24 @@ class NoteListItemWidget extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  viewModel.title.isEmpty ? 'Untitled note' : viewModel.title,
-                  style: KnowledgeHubTextStyles.titleMd.copyWith(color: KnowledgeHubColors.ink),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        viewModel.title.isEmpty ? 'Untitled note' : viewModel.title,
+                        style: KnowledgeHubTextStyles.titleMd.copyWith(
+                          color: KnowledgeHubColors.ink,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    CircularIconButtonWidget(
+                      icon: Icons.delete_outline,
+                      onPressed: onDeletePressed,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: KnowledgeHubSpacing.xs),
                 Text(
