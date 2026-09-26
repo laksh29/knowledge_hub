@@ -1,11 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:knowledge_hub/core/design_system/knowledge_hub_colors.dart';
 import 'package:knowledge_hub/core/di/injection.dart';
+import 'package:knowledge_hub/core/error/failure.dart';
+import 'package:knowledge_hub/core/error/result.dart';
+import 'package:knowledge_hub/core/utils/public_utils.dart';
 import 'package:knowledge_hub/features/notes/domain/usecases/create_folder_uc.dart';
 import 'package:knowledge_hub/features/notes/domain/usecases/create_tag_uc.dart';
 import 'package:knowledge_hub/features/notes/domain/usecases/delete_folder_uc.dart';
 import 'package:knowledge_hub/features/notes/domain/usecases/delete_tag_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/purge_expired_trash_uc.dart';
 import 'package:knowledge_hub/features/notes/domain/usecases/watch_filtered_notes_uc.dart';
 import 'package:knowledge_hub/features/notes/domain/usecases/watch_folders_uc.dart';
 import 'package:knowledge_hub/features/notes/domain/usecases/watch_note_search_results_uc.dart';
@@ -19,7 +25,26 @@ import 'package:knowledge_hub/features/notes/presentation/pages/note_list_page.d
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await configureDependencies();
+  unawaited(_purgeExpiredTrashOnStartup());
   runApp(const KnowledgeHubApp());
+}
+
+/// Task 6.3, Requirement 7.4. Fired once at startup, right after DI is
+/// configured, but deliberately never awaited by `main()` — a slow purge
+/// must never delay the app becoming interactive. `TrashCubit`'s own live
+/// `WatchFilteredNotesUc` subscription (started only once `TrashPage` is
+/// navigated to) naturally reflects whatever this purges, the same
+/// "live subscription is the source of truth" pattern already established
+/// for `restore`/`permanentlyDelete` — no explicit UI hook is needed here.
+/// A failure is logged for diagnosis only, never surfaced to the user,
+/// mirroring this codebase's established "silent no-op refresh" stance for
+/// background reconciliation failures (design.md's Error Handling table).
+Future<void> _purgeExpiredTrashOnStartup() async {
+  final Result<Failure, int> result = await getIt<PurgeExpiredTrashUc>().call();
+  result.when(
+    failure: (Failure failure) => printLog('startup trash purge failed: ${failure.message}'),
+    success: (int purgedCount) {},
+  );
 }
 
 /// App root (task 6.2). Provides the four presentation-layer Blocs/Cubits
