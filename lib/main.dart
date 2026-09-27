@@ -1,121 +1,92 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:knowledge_hub/core/design_system/knowledge_hub_colors.dart';
+import 'package:knowledge_hub/core/di/injection.dart';
+import 'package:knowledge_hub/core/error/failure.dart';
+import 'package:knowledge_hub/core/error/result.dart';
+import 'package:knowledge_hub/core/utils/public_utils.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/create_folder_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/create_tag_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/delete_folder_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/delete_tag_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/purge_expired_trash_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/watch_filtered_notes_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/watch_folders_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/watch_note_search_results_uc.dart';
+import 'package:knowledge_hub/features/notes/domain/usecases/watch_tags_uc.dart';
+import 'package:knowledge_hub/features/notes/presentation/bloc/search/search_bloc.dart';
+import 'package:knowledge_hub/features/notes/presentation/cubit/folder/folder_cubit.dart';
+import 'package:knowledge_hub/features/notes/presentation/cubit/note_list/note_list_cubit.dart';
+import 'package:knowledge_hub/features/notes/presentation/cubit/tag/tag_cubit.dart';
+import 'package:knowledge_hub/features/notes/presentation/pages/note_list_page.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await configureDependencies();
+  unawaited(_purgeExpiredTrashOnStartup());
+  runApp(const KnowledgeHubApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+/// Task 6.3, Requirement 7.4. Fired once at startup, right after DI is
+/// configured, but deliberately never awaited by `main()` — a slow purge
+/// must never delay the app becoming interactive. `TrashCubit`'s own live
+/// `WatchFilteredNotesUc` subscription (started only once `TrashPage` is
+/// navigated to) naturally reflects whatever this purges, the same
+/// "live subscription is the source of truth" pattern already established
+/// for `restore`/`permanentlyDelete` — no explicit UI hook is needed here.
+/// A failure is logged for diagnosis only, never surfaced to the user,
+/// mirroring this codebase's established "silent no-op refresh" stance for
+/// background reconciliation failures (design.md's Error Handling table).
+Future<void> _purgeExpiredTrashOnStartup() async {
+  final Result<Failure, int> result = await getIt<PurgeExpiredTrashUc>().call();
+  result.when(
+    failure: (Failure failure) => printLog('startup trash purge failed: ${failure.message}'),
+    success: (int purgedCount) {},
+  );
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+/// App root (task 6.2). Provides the four presentation-layer Blocs/Cubits
+/// whose lifecycle spans the whole app — `NoteListCubit`, `SearchBloc`,
+/// `FolderCubit`, `TagCubit` — at the same level as `NoteListPage` (`home`),
+/// each constructed via `getIt<UseCase>()` calls rather than registered in
+/// `get_it` itself, per the guide's Bloc/Cubit convention. `NoteEditorBloc`
+/// and `TrashCubit` are deliberately NOT provided here — their lifecycle is
+/// scoped to a single pushed page, so they are constructed at the
+/// `Navigator.push` call site instead (see `note_list_page.dart`).
+class KnowledgeHubApp extends StatelessWidget {
+  const KnowledgeHubApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<NoteListCubit>(
+          create: (_) => NoteListCubit(watchFilteredNotesUc: getIt<WatchFilteredNotesUc>()),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        BlocProvider<SearchBloc>(
+          create: (_) => SearchBloc(watchNoteSearchResultsUc: getIt<WatchNoteSearchResultsUc>()),
+        ),
+        BlocProvider<FolderCubit>(
+          create: (_) => FolderCubit(
+            createFolderUc: getIt<CreateFolderUc>(),
+            watchFoldersUc: getIt<WatchFoldersUc>(),
+            deleteFolderUc: getIt<DeleteFolderUc>(),
+          ),
+        ),
+        BlocProvider<TagCubit>(
+          create: (_) => TagCubit(
+            createTagUc: getIt<CreateTagUc>(),
+            watchTagsUc: getIt<WatchTagsUc>(),
+            deleteTagUc: getIt<DeleteTagUc>(),
+          ),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'Knowledge Hub',
+        theme: ThemeData(scaffoldBackgroundColor: KnowledgeHubColors.canvas),
+        home: const NoteListPage(),
       ),
     );
   }

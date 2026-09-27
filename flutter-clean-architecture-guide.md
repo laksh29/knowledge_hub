@@ -101,6 +101,23 @@ test/
 - Shared entities that more than one feature needs (`Money`, `User`, `Address`) go in `core/domain_shared/`, not duplicated per feature.
 - There is no compiler-enforced package boundary here (that would require splitting into packages, which this standard deliberately does not require). Treat the folder boundaries above as a **hard review rule** instead: a PR that imports another feature's `data/` or `presentation/` internals should be rejected on that basis alone (see §9).
 
+### 3.1 Reusable standalone packages (`packages/`)
+
+The single-app, no-monorepo default above is about feature/domain boundaries, not a ban on code reuse across projects. When a piece of infrastructure has **zero dependency on this app's domain types** (no `Note`/`Product`/`Failure`/`Result`, no `design.md` tokens, no app-specific DI annotations) and is genuinely generic — a SQLite WAL+FTS5 setup helper, a Markdown/code-block-highlighting text editor widget, an app-lifecycle-to-`Stream` adapter — extract it into its own local package under a top-level `packages/<name>/` directory instead of `lib/core/`.
+
+**The test**: could this code be copied verbatim into an unrelated Flutter project and still compile, with no find-and-replace of app-specific names? If yes, it belongs in `packages/`. If it needs even one type from this app, it belongs in `lib/core/` instead.
+
+```
+packages/
+├── sqlite_wal_fts_toolkit/        # generic: opens a WAL-mode sqlite3 database, builds FTS5 virtual-table/trigger SQL
+├── markdown_code_block_editor/    # generic: fenced-code-block-aware TextEditingController + highlighting widget
+└── app_lifecycle_service/         # generic: WidgetsBindingObserver wrapped as Stream<AppLifecycleState>
+```
+
+- Each package gets its own `pubspec.yaml` and is referenced from the app via a local `path:` dependency — no publishing required for reuse across this org's other projects.
+- A package must not depend on `flutter_bloc`/`get_it`/`injectable` annotations or any app-specific styling — the consuming app supplies its own DI registration (a manual `getIt.registerLazySingleton(...)` binding in `core/di/`, not an annotation inside the package) and its own visual styling (the package exposes plain style/theme parameters; the app supplies `design.md`-derived values at the call site).
+- `core/` may still depend on a `packages/*` package (e.g. `core/di/` registers `app_lifecycle_service`'s implementation); a `packages/*` package must never depend on `core/` or `features/`.
+
 ---
 
 ## 4. Core Utilities (`lib/core/`)
@@ -177,9 +194,9 @@ class CacheException implements Exception {
 
 A `DataSource` throws these. A `RepositoryImpl` catches them and converts to the matching `Failure`. Nothing above the repository ever sees a `ServerException`/`CacheException`.
 
-### 4.4 UseCase base classes — sync/async × with-params/no-params
+### 4.4 UseCase base classes — sync/async/stream × with-params/no-params
 
-Not all domain logic is I/O-bound. Forcing a pure, synchronous computation through an async contract just adds `Future` wrapping noise for no reason. Four base classes cover the real combinations:
+Not all domain logic is I/O-bound, and not all I/O is one-shot. Forcing a pure, synchronous computation through an async contract just adds `Future` wrapping noise for no reason; forcing a live, reactively-updating local data source (a Drift/SQL `.watch()` query, for example) through a repeatedly-re-invoked `Future`-based contract forces the presentation layer to hand-roll its own polling instead of subscribing once. Six base classes cover the real combinations:
 
 ```dart
 // lib/core/usecase/usecase.dart
@@ -202,6 +219,17 @@ abstract class SyncUseCase<S, P> {
 /// Sync, no params — pure computation needing no input.
 abstract class SyncUseCaseNoParams<S> {
   Result<Failure, S> call();
+}
+
+/// Reactive, takes params — watches a live local data source (e.g. a Drift
+/// `.watch()` query) and re-emits on every change. Not for remote polling.
+abstract class StreamUseCase<S, P> {
+  Stream<Result<Failure, S>> call(P params);
+}
+
+/// Reactive, no params — e.g. "watch the current folder list".
+abstract class StreamUseCaseNoParams<S> {
+  Stream<Result<Failure, S>> call();
 }
 ```
 
@@ -245,9 +273,22 @@ class GetDefaultSortOrder implements SyncUseCaseNoParams<SortOrder> {
   @override
   Result<Failure, SortOrder> call() => const Ok(SortOrder.relevance);
 }
+
+// Stream + params — watches a live, filterable local query. The repository
+// method it forwards to returns Stream<Result<Failure, S>> itself (typically
+// backed by a reactive query on the local persistence engine), not a Future
+// wrapped in a stream — there is exactly one subscription, not repeated polls.
+class WatchFilteredProducts implements StreamUseCase<List<Product>, ProductFilterParams> {
+  const WatchFilteredProducts(this._repository);
+  final ProductsRepository _repository;
+
+  @override
+  Stream<Result<Failure, List<Product>>> call(ProductFilterParams params) =>
+      _repository.watchProducts(params);
+}
 ```
 
-Pick the narrowest base class that matches what the use case actually does — a sync use case wrapped in `Future.value(...)` just to satisfy `UseCase` is a review-flaggable smell (§9).
+Pick the narrowest base class that matches what the use case actually does — a sync use case wrapped in `Future.value(...)` just to satisfy `UseCase` is a review-flaggable smell (§9), and so is a `StreamUseCase` whose repository method is really a one-shot `Future` wrapped in `Stream.fromFuture(...)` just to fit the same interface as a genuinely reactive sibling.
 
 ### 4.5 `NetworkInfo`
 
@@ -713,7 +754,7 @@ Reject or request changes if any of the following are true:
 | One-freezed-class-with-status-enum state | Sealed base state + explicit subclasses, carrying ViewModels forward | Distinct types make each state's valid fields explicit at compile time; carrying ViewModels into `Loading`/`Failure` avoids UI flicker without stuffing every branch with optional fields. |
 | Raw entities reaching the widget, ad hoc formatting in `build()` | Presentation `ViewModel`s expose only getters; widgets never branch on raw data | Keeps all display conditions in one reviewable, testable place instead of scattered across widgets. |
 | Bloc exposing convenience getters alongside `state` | Bloc/Cubit's only public surface is `state` | Prevents a getter and the emitted state from silently drifting apart. |
-| Single async `UseCase` base class | Four variants: sync/async × with-params/no-params | Not all domain logic is I/O-bound; forcing pure logic through `Future` adds noise for no benefit. |
+| Single async `UseCase` base class | Six variants: sync/async/stream × with-params/no-params | Not all domain logic is I/O-bound, and not all I/O is one-shot; a locally-watched reactive query needs a `Stream`-based contract, not a repeatedly re-invoked `Future`. |
 | No routing covered | `go_router`, route defs owned per feature | Not addressed by the source material at all; added to close a real gap. |
 | Ambiguous guidance on shared entities across features | Explicit `core/domain_shared` promotion rule | Removes a real ambiguity the course's own comment section never resolved. |
 
@@ -723,9 +764,9 @@ Reject or request changes if any of the following are true:
 
 Left as discussion points rather than settled rules, pending project-specific input:
 
-1. **Local persistence default** — standardize on `drift`/`hive` as the default for anything beyond trivial `shared_preferences` use, or decide per-feature?
+1. ~~**Local persistence default**~~ — **Resolved (`notes-mvp`, 2026-07-25)**: standardize on `drift` (on `package:sqlite3`, WAL mode) as the default for anything beyond trivial `shared_preferences` use. Hive was rejected (box-level rewrite model doesn't fit fine-grained incremental writes); Isar was rejected (upstream archived Mar 2026); ObjectBox was rejected (no relevance-ranked full-text search). WAL-mode setup and FTS5 virtual-table/trigger SQL generation live in the reusable `packages/sqlite_wal_fts_toolkit` package (§3.1), not hand-rolled per feature. Full rationale in `.kiro/specs/notes-mvp/research.md`.
 2. **Analytics/observability layer** — not addressed yet. Likely a `core/analytics` contract injected into Blocs, but needs a decision.
-3. **Offline-first / sync strategy** beyond simple last-cache-wins — relevant if any feature needs conflict resolution.
+3. **Offline-first / sync strategy** beyond simple last-cache-wins — relevant if any feature needs conflict resolution. `notes-mvp` takes one step toward this (client-generated UUID identifiers to not block a future sync migration) without deciding the broader strategy.
 4. **Lint ruleset** — a starting point like `very_good_analysis` is a reasonable default but not yet confirmed.
 5. **Widget/golden testing** — deliberately deferred (§8.6); revisit scope and tooling once a few reference features exist.
 
